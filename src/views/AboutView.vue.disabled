@@ -1,0 +1,632 @@
+<template>
+  <div class="about-page">
+    <!-- 英雄区域 -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <div class="hero-text">
+          <h1 class="hero-title">关于我们</h1>
+          <p class="hero-subtitle">让志愿服务更简单，让爱心传递更便捷</p>
+          <div class="hero-stats">
+            <div class="stat-item">
+              <div class="stat-number">10,000+</div>
+              <div class="stat-label">注册志愿者</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">5,000+</div>
+              <div class="stat-label">服务活动</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">50,000+</div>
+              <div class="stat-label">服务时长</div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-image">
+          <div class="volunteer-icon">
+            <el-icon size="120" color="#409eff"><Star /></el-icon>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 平台介绍 -->
+    <section class="intro-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>平台介绍</h2>
+          <p>我们致力于构建一个高效、便捷、安全的志愿服务平台</p>
+        </div>
+        <div class="intro-content">
+          <div class="intro-text">
+            <p>
+              志愿者服务平台是一个集活动发布、志愿者招募、服务记录、积分激励于一体的综合性平台。
+              我们通过数字化手段，让志愿服务更加规范化、透明化，让每一份爱心都能得到应有的认可和回报。
+            </p>
+            <p>
+              平台采用先进的技术架构，提供完善的安全保障体系，包括志愿者保险服务、紧急联络机制等，
+              确保每一位志愿者在服务过程中都能得到充分的保护和支持。
+            </p>
+          </div>
+          <div class="intro-features">
+            <div class="feature-item">
+              <el-icon size="32" color="#67c23a"><Check /></el-icon>
+              <div class="feature-content">
+                <h3>安全可靠</h3>
+                <p>完善的保险保障和紧急联络机制</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <el-icon size="32" color="#e6a23c"><CircleCheck /></el-icon>
+              <div class="feature-content">
+                <h3>积分激励</h3>
+                <p>星级评定和积分商城，让服务更有价值</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <el-icon size="32" color="#f56c6c"><CircleCheckFilled /></el-icon>
+              <div class="feature-content">
+                <h3>爱心传递</h3>
+                <p>让每一份善意都能温暖更多需要帮助的人</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 核心功能 -->
+    <section class="features-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>核心功能</h2>
+          <p>为志愿者和组织者提供全方位的服务支持</p>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <el-icon size="48" color="#409eff"><Calendar /></el-icon>
+            </div>
+            <h3>活动管理</h3>
+            <p>发布、报名、签到、评价一站式活动管理，让志愿服务更加便捷高效</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <el-icon size="48" color="#67c23a"><User /></el-icon>
+            </div>
+            <h3>志愿者管理</h3>
+            <p>完善的志愿者档案、技能认证、服务记录管理，让志愿者成长有迹可循</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <el-icon size="48" color="#e6a23c"><CircleCheckFilled /></el-icon>
+            </div>
+            <h3>积分体系</h3>
+            <p>星级评定、积分奖励、商城兑换，让志愿服务更有价值和意义</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <el-icon size="48" color="#f56c6c"><Check /></el-icon>
+            </div>
+            <h3>安全保障</h3>
+            <p>志愿者保险、紧急联络、安全培训，全方位保障志愿者权益</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <el-icon size="48" color="#909399"><Message /></el-icon>
+            </div>
+            <h3>消息中心</h3>
+            <p>实时消息推送、活动通知、系统公告，让信息传递更及时</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <el-icon size="48" color="#606266"><TrendCharts /></el-icon>
+            </div>
+            <h3>数据分析</h3>
+            <p>服务统计、趋势分析、效果评估，让志愿服务更加科学化</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 价值观 -->
+    <section class="values-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>我们的价值观</h2>
+          <p>以爱心为纽带，以服务为使命</p>
+        </div>
+        <div class="values-content">
+          <div class="value-item">
+            <div class="value-icon">
+              <el-icon size="40" color="#409eff"><CircleCheckFilled /></el-icon>
+            </div>
+            <h3>爱心</h3>
+            <p>以爱心为出发点，关注社会需求，传递温暖与希望</p>
+          </div>
+          <div class="value-item">
+            <div class="value-icon">
+              <el-icon size="40" color="#67c23a"><Check /></el-icon>
+            </div>
+            <h3>责任</h3>
+            <p>承担社会责任，为社会发展贡献自己的力量</p>
+          </div>
+          <div class="value-item">
+            <div class="value-icon">
+              <el-icon size="40" color="#e6a23c"><Star /></el-icon>
+            </div>
+            <h3>专业</h3>
+            <p>提供专业的志愿服务，确保服务质量和服务效果</p>
+          </div>
+          <div class="value-item">
+            <div class="value-icon">
+              <el-icon size="40" color="#f56c6c"><Link /></el-icon>
+            </div>
+            <h3>合作</h3>
+            <p>倡导团队合作，共同构建和谐的社会环境</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 联系我们 -->
+    <section class="contact-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>联系我们</h2>
+          <p>如有任何问题或建议，欢迎与我们联系</p>
+        </div>
+        <div class="contact-content">
+          <div class="contact-info">
+            <div class="contact-item">
+              <el-icon size="24" color="#409eff"><Phone /></el-icon>
+              <div class="contact-details">
+                <h4>客服热线</h4>
+                <p>400-123-4567</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <el-icon size="24" color="#409eff"><Message /></el-icon>
+              <div class="contact-details">
+                <h4>邮箱地址</h4>
+                <p>service@volunteer-platform.com</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <el-icon size="24" color="#409eff"><Location /></el-icon>
+              <div class="contact-details">
+                <h4>公司地址</h4>
+                <p>北京市朝阳区志愿者大厦</p>
+              </div>
+            </div>
+          </div>
+          <div class="contact-form">
+            <h3>意见反馈</h3>
+            <el-form :model="feedbackForm" label-width="80px">
+              <el-form-item label="姓名">
+                <el-input v-model="feedbackForm.name" placeholder="请输入您的姓名" />
+              </el-form-item>
+              <el-form-item label="邮箱">
+                <el-input v-model="feedbackForm.email" placeholder="请输入您的邮箱" />
+              </el-form-item>
+              <el-form-item label="反馈内容">
+                <el-input
+                  v-model="feedbackForm.message"
+                  type="textarea"
+                  :rows="4"
+                  placeholder="请输入您的意见或建议"
+                />
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" @click="submitFeedback">提交反馈</el-button>
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import {
+  Star,
+  Check,
+  CircleCheck,
+  CircleCheckFilled,
+  Calendar,
+  User,
+  Message,
+  TrendCharts,
+  Link,
+  Phone,
+  Location
+} from '@element-plus/icons-vue'
+
+// 反馈表单数据
+const feedbackForm = ref({
+  name: '',
+  email: '',
+  message: ''
+})
+
+// 提交反馈
+const submitFeedback = () => {
+  if (!feedbackForm.value.name || !feedbackForm.value.email || !feedbackForm.value.message) {
+    ElMessage.warning('请填写完整信息')
+    return
+  }
+  
+  // 这里可以调用API提交反馈
+  ElMessage.success('反馈提交成功，感谢您的建议！')
+  
+  // 清空表单
+  feedbackForm.value = {
+    name: '',
+    email: '',
+    message: ''
+  }
+}
+</script>
+
+<style scoped>
+.about-page {
+    min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* 英雄区域 */
+.hero-section {
+  background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
+  color: white;
+  padding: 80px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+  animation: float 20s infinite linear;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-100px); }
+}
+
+.hero-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 40px;
+  opacity: 0.9;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 40px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.hero-image {
+  flex-shrink: 0;
+}
+
+.volunteer-icon {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* 通用区域样式 */
+.intro-section,
+.features-section,
+.values-section,
+.contact-section {
+  padding: 80px 0;
+}
+
+.intro-section {
+  background: white;
+}
+
+.features-section {
+  background: #f8f9fa;
+}
+
+.values-section {
+  background: white;
+}
+
+.contact-section {
+  background: #f8f9fa;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.section-header h2 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.section-header h2::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, #409eff, #67c23a);
+  border-radius: 2px;
+}
+
+.section-header p {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* 介绍区域 */
+.intro-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.intro-text p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+.intro-features {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.feature-item:hover {
+  transform: translateY(-5px);
+}
+
+.feature-content h3 {
+  font-size: 1.3rem;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.feature-content p {
+  color: #7f8c8d;
+  line-height: 1.6;
+}
+
+/* 功能区域 */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 30px;
+}
+
+.feature-card {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.feature-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.feature-icon {
+  margin-bottom: 20px;
+}
+
+.feature-card h3 {
+  font-size: 1.4rem;
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.feature-card p {
+  color: #7f8c8d;
+  line-height: 1.6;
+}
+
+/* 价值观区域 */
+.values-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 40px;
+}
+
+.value-item {
+  text-align: center;
+  padding: 40px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.value-item:hover {
+  transform: translateY(-5px);
+}
+
+.value-icon {
+  margin-bottom: 20px;
+}
+
+.value-item h3 {
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.value-item p {
+  color: #7f8c8d;
+  line-height: 1.6;
+}
+
+/* 联系区域 */
+.contact-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+  gap: 20px;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.contact-details h4 {
+  font-size: 1.2rem;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.contact-details p {
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+.contact-form {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+}
+
+.contact-form h3 {
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .hero-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 40px;
+  }
+  
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .hero-stats {
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  .intro-content,
+  .contact-content {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .values-content {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  
+  .section-header h2 {
+    font-size: 2rem;
+  }
+  
+  .intro-section,
+  .features-section,
+  .values-section,
+  .contact-section {
+    padding: 60px 0;
+  }
+}
+</style>

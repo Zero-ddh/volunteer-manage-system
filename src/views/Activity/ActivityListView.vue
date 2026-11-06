@@ -1,428 +1,367 @@
 <template>
-  <div class="admin-activity-list">
+  <div class="activity-list">
     <!-- 页面标题 -->
     <div class="page-header">
-      <h1 class="page-title">活动管理</h1>
-      <p class="page-subtitle">管理志愿活动的发布、编辑和审核</p>
+      <div class="page-header-content">
+        <h1 class="page-title">志愿活动</h1>
+        <p class="page-subtitle">发现更多有意义的志愿活动，为社会贡献自己的力量</p>
+      </div>
     </div>
 
-    <!-- 操作栏 -->
-    <el-card class="action-bar">
-      <div class="search-group">
-        <el-input 
-          v-model="searchForm.keyword" 
-          placeholder="搜索活动标题、组织者..." 
-          clearable 
-          style="width: 250px"
-          @keyup.enter="load"
-        />
-        <el-select 
-          v-model="searchForm.categoryId" 
-          placeholder="全部分类" 
-          clearable 
-          style="width: 140px"
-        >
-          <el-option 
-            v-for="category in categoryList" 
-            :key="category.id" 
-            :label="category.categoryName" 
-            :value="category.id" 
-          />
-        </el-select>
-        <el-select 
-          v-model="searchForm.status" 
-          placeholder="全部状态" 
-          clearable 
-          style="width: 140px"
-        >
-          <el-option label="草稿" :value="1" />
-          <el-option label="已发布" :value="2" />
-          <el-option label="进行中" :value="3" />
-          <el-option label="已结束" :value="4" />
-          <el-option label="已取消" :value="5" />
-        </el-select>
+    <!-- 筛选区（参照原型） -->
+    <el-card class="filter-card mb-16">
+      <el-row :gutter="16" class="mb-16">
+        <el-col :xs="24" :sm="12" :md="6">
+          <div class="filter-group">
+            <div class="filter-label">搜索关键词</div>
+            <el-input v-model="keyword" placeholder="输入活动标题或关键词" clearable />
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <div class="filter-group">
+            <div class="filter-label">活动分类</div>
+            <el-select v-model="category" placeholder="全部分类" clearable class="w-full" :loading="categoryLoading">
+              <el-option 
+                v-for="c in categories" 
+                :key="c.id" 
+                :label="c.categoryName" 
+                :value="c.id" 
+              />
+            </el-select>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <div class="filter-group">
+            <div class="filter-label">活动状态</div>
+            <el-select v-model="status" placeholder="全部状态" clearable class="w-full">
+              <el-option label="即将开始" value="upcoming" />
+              <el-option label="进行中" value="ongoing" />
+              <el-option label="已结束" value="ended" />
+            </el-select>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <div class="filter-group">
+            <div class="filter-label">活动地址</div>
+            <el-input v-model="location" placeholder="输入活动地址关键词" clearable />
+          </div>
+        </el-col>
+      </el-row>
+      <el-row :gutter="16" class="mb-16">
+        <el-col :xs="24" :sm="12" :md="12">
+          <div class="filter-group">
+            <div class="filter-label">活动时间</div>
+            <el-date-picker
+              v-model="startTimeRange"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              value-format="YYYY-MM-DD"
+              style="width: 100%"
+            />
+          </div>
+        </el-col>
+      </el-row>
+      <div class="filter-actions">
+        <el-button @click="reset">重置</el-button>
         <el-button type="primary" @click="load">搜索</el-button>
-        <el-button @click="resetSearch">重置</el-button>
-        <el-button type="success" @click="addActivity">发布活动</el-button>
       </div>
     </el-card>
 
-    <!-- 活动列表 -->
-    <el-card class="activity-list">
-      <el-table 
-        :data="list" 
-        v-loading="loading"
-        @selection-change="handleSelectionChange"
-        style="width: 100%"
-      >
-        <el-table-column type="selection" width="50" />
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="title" label="活动标题" min-width="200" />
-        <el-table-column label="组织者" width="150">
-          <template #default="{ row }">
-            {{ getOrganizerName(row.organizerId) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="分类" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getCategoryType(row.categoryId)" size="small">
-              {{ getCategoryName(row.categoryId) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)" size="small">
-              {{ getStatusName(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="报名人数" width="120">
-          <template #default="{ row }">
-            <div class="participants-info">
-              {{ row.currentParticipants }}/{{ row.maxParticipants }}人
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createdTime" label="创建时间" width="160">
-          <template #default="{ row }">
-            {{ formatDateTime(row.createdTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <div class="action-buttons">
-              <el-button type="primary" size="small" @click="viewActivity(row.id)">
-                查看
-              </el-button>
-              <el-button type="warning" size="small" @click="editActivity(row.id)">
-                编辑
-              </el-button>
-              <el-button 
-                type="success" 
-                size="small" 
-                v-if="row.status === 1"
-                @click="publishActivity(row.id)"
-              >
-                发布
-              </el-button>
-              <el-button 
-                type="danger" 
-                size="small" 
-                @click="deleteActivity(row.id)"
-              >
-                删除
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+    <!-- 列表 -->
+    <el-card class="activities-card">
+      <div class="section-header">
+        <div class="section-title">活动列表</div>
+        <!-- 排序选择器（仅在登录状态下显示） -->
+        <div v-if="isLoggedIn" class="sort-options">
+          <span class="sort-label">排序方式：</span>
+          <el-radio-group v-model="sortType" @change="handleSortChange">
+            <el-radio label="latest">最新发布</el-radio>
+            <el-radio label="recommended">智能推荐</el-radio>
+          </el-radio-group>
+        </div>
+      </div>
 
-      <!-- 分页 -->
-      <div class="pagination">
+      <div v-loading="loading">
+        <!-- 活动列表 -->
+        <div v-if="activities && activities.length > 0">
+          <div v-for="item in activities" :key="item.id" class="activity-item" @click="$router.push(`/activities/${item.id}`)">
+            <!-- 活动图片已屏蔽 -->
+            <!-- <div class="activity-image">{{ item.coverImage ? '' : '活动图片' }}<img v-if="item.coverImage" :src="item.coverImage" alt="cover" /></div> -->
+            <div class="activity-info">
+              <div class="activity-header">
+                <div class="activity-title">{{ item.title }}</div>
+                <div class="activity-description">{{ item.description }}</div>
+              </div>
+              <div class="activity-meta">
+                <span>👥 需要{{ item.maxParticipants || 0 }}人</span>
+                <span>📅 {{ item.startTime }}</span>
+                <span>⏰ 截止：{{ item.endTime || '-' }}</span>
+                <!-- 显示推荐匹配分数（仅在智能推荐模式下） -->
+                <span v-if="sortType === 'recommended' && item.matchScore !== undefined" class="match-score">
+                  🎯 匹配度 {{ Math.round(item.matchScore) }}%
+                </span>
+              </div>
+              <div class="activity-location">📍 {{ item.location }}</div>
+              <div class="activity-tags">
+                <span class="tag" v-if="item.categoryName">{{ item.categoryName }}</span>
+              </div>
+            </div>
+            <div class="activity-stats">
+              <div class="activity-status" :class="statusClass(item.status)">{{ statusText(item.status) }}</div>
+              <div class="activity-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" :style="{ width: progressPercent(item) + '%' }"></div>
+                </div>
+                <div class="progress-text">{{ (item.currentParticipants || 0) }}/{{ item.maxParticipants || 0 }} 人</div>
+              </div>
+              <div class="activity-count">已报名 {{ item.currentParticipants || 0 }} 人</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 暂无数据提示 -->
+        <div v-else class="no-data">
+          <div class="no-data-icon">📋</div>
+          <div class="no-data-text">暂无数据</div>
+          <div class="no-data-desc">当前没有符合条件的志愿活动，请尝试调整筛选条件</div>
+        </div>
+      </div>
+
+      <div class="flex-center pagination">
         <el-pagination
           v-model:current-page="pageNo"
           v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
           :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="load"
+          layout="total, prev, pager, next"
           @current-change="load"
         />
       </div>
     </el-card>
-
-    <!-- 批量审核对话框 -->
-    <el-dialog v-model="auditDialogVisible" title="批量审核" width="400px">
-      <el-form :model="auditForm" label-width="80px">
-        <el-form-item label="审核状态">
-          <el-select v-model="auditForm.status" placeholder="请选择状态">
-            <el-option label="发布" :value="2" />
-            <el-option label="取消" :value="5" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input 
-            v-model="auditForm.remark" 
-            type="textarea" 
-            placeholder="请输入审核备注"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="auditDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmBatchAudit">确认</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useRouter } from 'vue-router'
-import { activityApi, activityCategoryApi } from '@/api'
+import { ref, onMounted, computed } from 'vue'
+import { useActivityStore } from '@/stores/activity'
+import { useAuthStore } from '@/stores/auth'
+import { activityCategoryApi, activityApi } from '@/api'
+import { ElMessage } from 'element-plus'
 
-const router = useRouter()
+const activityStore = useActivityStore()
+const authStore = useAuthStore()
+const { getActivityList } = activityStore
 
-// 响应式数据
-const loading = ref(false)
 const pageNo = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(9)
 const total = ref(0)
-const list = ref<any[]>([])
-const selectedIds = ref<number[]>([])
-const auditDialogVisible = ref(false)
-const categoryList = ref<any[]>([])
+const keyword = ref('')
+const status = ref<string | undefined>()
+const category = ref<number | undefined>()
+const location = ref('') // 活动地址
+const startTimeRange = ref<[string, string] | null>(null) // 活动时间范围
 
-// 搜索表单
-const searchForm = reactive({
-  keyword: '',
-  categoryId: undefined as number | undefined,
-  status: undefined as number | undefined
-})
+const categories = ref<any[]>([])
+const categoryLoading = ref(false)
 
-// 审核表单
-const auditForm = reactive({
-  status: 2,
-  remark: ''
-})
+// 排序相关
+const sortType = ref('latest') // 'latest' | 'recommended'
+const activities = ref<any[]>([])
+const loading = ref(false)
 
-// 分类映射 - 动态生成
-const categoryMap = ref<{ [key: number]: { name: string; type: string } }>({})
+// 检查登录状态
+const isLoggedIn = computed(() => authStore.isLoggedIn)
 
-// 状态映射
-const statusMap = {
-  1: { name: '草稿', type: 'info' },
-  2: { name: '已发布', type: 'success' },
-  3: { name: '进行中', type: 'primary' },
-  4: { name: '已结束', type: 'warning' },
-  5: { name: '已取消', type: 'danger' }
+// 状态值映射：前端字符串 -> 后端整数
+const statusMap: { [key: string]: number } = {
+  'upcoming': 2,  // 即将开始
+  'ongoing': 3,   // 进行中
+  'ended': 4      // 已结束
 }
 
-// 获取分类名称
-const getCategoryName = (categoryId: number) => {
-  return categoryMap.value[categoryId]?.name || '未知'
-}
-
-// 获取分类类型
-const getCategoryType = (categoryId: number) => {
-  return categoryMap.value[categoryId]?.type || 'info'
-}
-
-// 获取状态名称
-const getStatusName = (status: number) => {
-  return statusMap[status as keyof typeof statusMap]?.name || '未知'
-}
-
-// 获取状态类型
-const getStatusType = (status: number) => {
-  return statusMap[status as keyof typeof statusMap]?.type || 'info'
-}
-
-// 获取组织者名称
-const getOrganizerName = (organizerId: number) => {
-  // 这里可以根据organizerId从用户列表或API获取组织者名称
-  // 暂时返回一个默认值，实际项目中应该从后端获取
-  const organizerMap: { [key: number]: string } = {
-    1: '系统管理员',
-    2: '活动组织者1',
-    3: '活动组织者2'
-  }
-  return organizerMap[organizerId] || `组织者${organizerId}`
-}
-
-// 格式化日期
-const formatDate = (date: string) => {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString('zh-CN')
-}
-
-// 格式化日期时间
-const formatDateTime = (date: string) => {
-  if (!date) return ''
-  return new Date(date).toLocaleString('zh-CN')
-}
-
-// 加载数据
+// 加载活动列表
 const load = async () => {
+  // 游客状态下默认按发布时间排序，登录状态下根据选择的排序方式加载
+  if (isLoggedIn.value && sortType.value === 'recommended') {
+    await loadRecommendedActivities()
+  } else {
+    // 游客或选择"最新发布"时，使用默认的发布时间排序
+    await loadLatestActivities()
+  }
+}
+
+// 加载最新发布的活动的
+const loadLatestActivities = async () => {
   try {
     loading.value = true
-    const params = {
+    console.log('开始加载活动列表，参数:', {
       pageNo: pageNo.value,
       pageSize: pageSize.value,
-      ...searchForm
+      keyword: keyword.value,
+      status: status.value,
+      category: category.value,
+      location: location.value,
+      startTimeRange: startTimeRange.value
+    })
+    
+    // 构建查询参数
+    const params: any = {
+      pageNo: pageNo.value,
+      pageSize: pageSize.value
     }
-    const res = await activityApi.getActivityList(params)
-    list.value = res.data?.records || res.data?.list || []
-    total.value = res.data?.total || 0
+    
+    if (keyword.value) params.keyword = keyword.value
+    if (status.value) params.status = statusMap[status.value]
+    if (category.value) params.categoryId = category.value
+    if (location.value) params.location = location.value
+    
+    // 处理活动时间范围（日期格式转换为全天时间范围）
+    if (startTimeRange.value && startTimeRange.value.length === 2) {
+      // 开始日期：yyyy-MM-dd 00:00:00
+      params.startTimeBegin = startTimeRange.value[0] + ' 00:00:00'
+      // 结束日期：yyyy-MM-dd 23:59:59
+      params.startTimeEnd = startTimeRange.value[1] + ' 23:59:59'
+    }
+    
+    const res: any = await getActivityList(params)
+    
+    console.log('API响应:', res)
+    
+    // 处理不同的响应数据结构
+    if (res && res.code === 200 && res.data) {
+      // 标准分页响应：{ code: 200, data: { records: [...], total: 39 } }
+      activities.value = res.data.records || res.data || []
+      total.value = res.data.total || 0
+      console.log('活动列表数据:', activities.value, '总数:', total.value)
+    } else if (res && res.records) {
+      // 直接返回分页结构：{ records: [...], total: 39 }
+      activities.value = res.records || []
+      total.value = res.total || 0
+      console.log('活动列表数据（records）:', activities.value, '总数:', total.value)
+    } else if (res && res.data && Array.isArray(res.data)) {
+      // 直接返回数组的情况
+      activities.value = res.data
+      total.value = res.total || 0
+    } else if (Array.isArray(res)) {
+      // 直接返回数组
+      activities.value = res
+      total.value = res.length
+    } else {
+      activities.value = []
+      total.value = 0
+    }
   } catch (error) {
-    ElMessage.error('加载数据失败')
+    console.error('加载活动列表失败:', error)
+    activities.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+    console.log('加载完成，activities.value:', activities.value)
+  }
+}
+
+// 加载智能推荐的活动
+const loadRecommendedActivities = async () => {
+  try {
+    loading.value = true
+    const params: any = {
+      pageNo: pageNo.value,
+      pageSize: pageSize.value
+    }
+    
+    if (category.value) {
+      params.categoryId = category.value
+    }
+    
+    if (keyword.value) {
+      // 推荐接口可能不支持关键词搜索，先在本地筛选
+      const res: any = await activityApi.getRecommendedActivities(params)
+      const allActivities = res || []
+      activities.value = allActivities.filter((item: any) => 
+        item.title?.includes(keyword.value) || 
+        item.description?.includes(keyword.value)
+      )
+    } else {
+      const res: any = await activityApi.getRecommendedActivities(params)
+      activities.value = res || []
+    }
+    
+    total.value = activities.value.length
+    
+    // 再次应用状态筛选
+    if (status.value && statusMap[status.value]) {
+      const statusValue = statusMap[status.value]
+      activities.value = activities.value.filter((item: any) => item.status === statusValue)
+    }
+  } catch (error) {
+    console.error('加载推荐活动失败:', error)
+    ElMessage.warning('推荐功能需要登录后才能使用')
+    // 如果推荐失败，回退到最新发布
+    sortType.value = 'latest'
+    await loadLatestActivities()
   } finally {
     loading.value = false
   }
 }
 
-// 重置搜索
-const resetSearch = () => {
-  searchForm.keyword = ''
-  searchForm.categoryId = undefined
-  searchForm.status = undefined
-  pageNo.value = 1
+// 处理排序方式变化
+const handleSortChange = async () => {
+  pageNo.value = 1 // 重置页码
+  await load()
+}
+
+const reset = () => {
+  keyword.value = ''
+  status.value = undefined
+  category.value = undefined
+  location.value = ''
+  startTimeRange.value = null
   load()
 }
 
-// 选择变化
-const handleSelectionChange = (selection: any[]) => {
-  selectedIds.value = selection.map(item => item.id)
+const progressPercent = (item: any) => {
+  const a = Number(item.currentParticipants || 0)
+  const b = Number(item.maxParticipants || 0)
+  if (!b) return 0
+  return Math.min(100, Math.round((a / b) * 100))
 }
 
-// 发布活动
-const addActivity = () => {
-  // 跳转到创建活动页面
-  router.push('/activities/create')
-}
-
-// 查看活动
-const viewActivity = (id: number) => {
-  // 跳转到活动详情页面
-  router.push(`/activities/${id}`)
-}
-
-// 编辑活动
-const editActivity = (id: number) => {
-  // 跳转到编辑活动页面
-  router.push(`/activities/${id}/edit`)
-}
-
-// 发布活动
-const publishActivity = async (id: number) => {
-  try {
-    await ElMessageBox.confirm('确认发布此活动吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    await activityApi.updateActivityStatus(id, 2)
-    ElMessage.success('发布成功')
-    await load()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('发布失败')
-    }
+const statusText = (s: any) => {
+  const statusMap: { [key: number]: string } = {
+    1: '草稿',
+    2: '即将开始', 
+    3: '进行中',
+    4: '已结束',
+    5: '已取消'
   }
+  return statusMap[s] || '进行中'
 }
 
-// 删除活动
-const deleteActivity = async (id: number) => {
-  try {
-    await ElMessageBox.confirm('确认删除此活动吗？删除后无法恢复！', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    await activityApi.deleteActivity(id)
-    ElMessage.success('删除成功')
-    await load()
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      // 显示后端返回的具体错误信息
-      const errorMessage = error?.message || error?.response?.data?.message || '删除失败'
-      ElMessage.error(errorMessage)
-    }
+const statusClass = (s: any) => {
+  const classMap: { [key: number]: string } = {
+    1: 'status-draft',
+    2: 'status-upcoming',
+    3: 'status-ongoing', 
+    4: 'status-ended',
+    5: 'status-cancelled'
   }
+  return classMap[s] || 'status-ongoing'
 }
 
-// 批量审核
-const batchAudit = () => {
-  if (selectedIds.value.length === 0) {
-    ElMessage.warning('请先选择要审核的活动')
-    return
-  }
-  auditDialogVisible.value = true
-}
-
-// 确认批量审核
-const confirmBatchAudit = async () => {
-  try {
-    await activityApi.batchUpdateStatus(selectedIds.value, auditForm.status)
-    ElMessage.success('批量审核成功')
-    auditDialogVisible.value = false
-    await load()
-  } catch (error) {
-    ElMessage.error('批量审核失败')
-  }
-}
-
-// 批量删除
-const batchDelete = async () => {
-  if (selectedIds.value.length === 0) {
-    ElMessage.warning('请先选择要删除的活动')
-    return
-  }
-  
-  try {
-    await ElMessageBox.confirm(`确认删除选中的 ${selectedIds.value.length} 个活动吗？删除后无法恢复！`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    await activityApi.batchDelete(selectedIds.value)
-    ElMessage.success('批量删除成功')
-    await load()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('批量删除失败')
-    }
-  }
-}
-
-// 加载分类数据
+// 加载活动分类
 const loadCategories = async () => {
   try {
+    categoryLoading.value = true
     const res = await activityCategoryApi.getEnabledCategories()
-    if (res.code === 200) {
-      categoryList.value = res.data || []
-      // 构建分类映射
-      const map: { [key: number]: { name: string; type: string } } = {}
-      const typeColors = ['success', 'primary', 'warning', 'danger', 'info']
-      categoryList.value.forEach((category: any, index: number) => {
-        map[category.id] = {
-          name: category.categoryName,
-          type: typeColors[index % typeColors.length]
-        }
-      })
-      categoryMap.value = map
-    }
+    categories.value = res || []
   } catch (error) {
-    console.error('加载分类数据失败:', error)
-    ElMessage.error('加载分类数据失败')
+    console.error('加载活动分类失败:', error)
+  } finally {
+    categoryLoading.value = false
   }
 }
 
-// 导出活动数据
-const exportActivities = async () => {
-  try {
-    const res = await activityApi.exportActivities(searchForm)
-    if (res.data) {
-      // 创建下载链接
-      const link = document.createElement('a')
-      link.href = res.data
-      link.download = `活动数据_${new Date().toLocaleDateString()}.xlsx`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      ElMessage.success('导出成功')
-    }
-  } catch (error) {
-    ElMessage.error('导出失败')
-  }
-}
-
-// 页面加载时获取数据
 onMounted(() => {
   loadCategories()
   load()
@@ -430,81 +369,141 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.admin-activity-list {
-  padding: 20px;
-}
-
-.page-header {
+.page-header { 
+  background: linear-gradient(135deg, #2c5aa0 0%, #4a7bc8 100%);
+  color: #fff;
+  padding: 60px 0;
+  text-align: center;
   margin-bottom: 20px;
+  /* 全宽铺满屏幕两侧（突破父级容器宽度限制） */
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+.page-header-content { 
+  max-width: 800px; 
+  margin: 0 auto; 
+  padding: 0 20px; 
+}
+.page-title { 
+  font-size: 32px; 
+  font-weight: 700; 
+  color: #fff; 
+  margin: 0 0 12px 0; 
+}
+.page-subtitle { 
+  color: #fff; 
+  opacity: 0.95; 
+  font-size: 16px; 
+}
+.filter-card { border-radius: 10px; }
+.filter-group { display: flex; flex-direction: column; }
+.filter-label { font-weight: 600; color: #333; margin-bottom: 6px; }
+.w-full { width: 100%; }
+.filter-actions { display: flex; justify-content: flex-end; gap: 12px; }
+
+.activities-card { border-radius: 10px; overflow: hidden; }
+.section-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; border-bottom: 1px solid #eee; }
+.section-title { font-weight: 700; color: #333; }
+.sort-options { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.sort-label { color: #666; font-size: 13px; }
+.match-score {
+  color: #ff4757;
+  font-weight: bold;
+  font-size: 13px;
+}
+.match-tag { 
+  background: #fff;
+  color: #ff4757 !important; 
+  font-weight: bold;
+  font-size: 13px;
+  border: 2px solid #ff4757;
+  box-shadow: 0 2px 8px rgba(255, 71, 87, 0.2);
 }
 
-.page-title {
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
+.activity-item { display: grid; grid-template-columns: 1fr auto; gap: 16px; padding: 20px 8px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+.activity-item:last-child { border-bottom: none; }
+.activity-image { width: 200px; height: 120px; background: #e9ecef; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #666; position: relative; overflow: hidden; }
+.activity-image img { width: 100%; height: 100%; object-fit: cover; }
+.activity-header { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 12px; }
+.activity-title { font-size: 18px; font-weight: 700; color: #333; flex-shrink: 0; }
+.activity-meta { display: flex; gap: 16px; color: #666; font-size: 13px; margin-bottom: 8px; }
+.activity-location { color: #666; font-size: 13px; margin-bottom: 8px; }
+.activity-description { color: #666; font-size: 14px; line-height: 1.5; flex: 1; }
+.activity-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.tag { padding: 4px 8px; background: #e9ecef; color: #666; border-radius: 12px; font-size: 12px; }
+
+.activity-stats { text-align: right; min-width: 150px; }
+.activity-status { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: 700; display: inline-block; margin-bottom: 10px; }
+.status-draft { background: #e2e3e5; color: #6c757d; }
+.status-upcoming { background: #fff3cd; color: #856404; }
+.status-ongoing { background: #d4edda; color: #155724; }
+.status-ended { background: #f8d7da; color: #721c24; }
+.status-cancelled { background: #f5c6cb; color: #721c24; }
+.activity-progress { margin-bottom: 10px; }
+.progress-bar { width: 100%; height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: #2c5aa0; }
+.progress-text { font-size: 12px; color: #666; text-align: center; }
+.pagination { padding: 16px 0 8px; }
+
+/* 暂无数据样式 */
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #999;
+}
+
+.no-data-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.no-data-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #666;
   margin-bottom: 8px;
 }
 
-.page-subtitle {
-  color: #666;
+.no-data-desc {
   font-size: 14px;
-}
-
-.action-bar {
-  margin-bottom: 20px;
-}
-
-.search-group {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: nowrap;
-}
-
-
-.activity-list {
-  margin-bottom: 20px;
-}
-
-
-.participants-info {
-  text-align: center;
-}
-
-.participants-count {
-  font-weight: bold;
-  color: #333;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 4px;
-  flex-wrap: nowrap;
-}
-
-.pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
+  color: #999;
+  line-height: 1.5;
 }
 
 @media (max-width: 768px) {
-  .search-group {
-    flex-direction: column;
-    align-items: stretch;
+  .page-header {
+    padding: 40px 0;
   }
   
-  .search-group .el-input,
-  .search-group .el-select {
-    width: 100% !important;
+  .page-title {
+    font-size: 28px;
   }
   
-  .btn-group {
-    justify-content: center;
+  .page-subtitle {
+    font-size: 14px;
   }
   
-  .action-buttons {
-    flex-direction: column;
+  .activity-item { grid-template-columns: 1fr; text-align: center; }
+  .activity-image { width: 100%; height: 150px; }
+  .activity-stats { text-align: center; }
+  .activity-header { flex-direction: column; align-items: flex-start; text-align: left; }
+  .activity-description { width: 100%; }
+  
+  .no-data {
+    padding: 40px 20px;
+  }
+  
+  .no-data-icon {
+    font-size: 36px;
+  }
+  
+  .no-data-text {
+    font-size: 16px;
   }
 }
 </style>

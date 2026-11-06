@@ -11,14 +11,19 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3001,
+    port: 3000,
     host: '0.0.0.0',
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api/, '/api')
+        secure: false
+      },
+      // 添加uploads路径的代理，用于访问上传的文件
+      '/uploads': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false
       }
     }
   },

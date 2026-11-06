@@ -1,11 +1,9 @@
 <template>
-  <div class="community-management">
+  <div class="community-list">
+    <!-- 页面标题 -->
     <div class="page-header">
-      <h2>社群列表管理</h2>
-      <el-button type="primary" @click="handleCreate">
-        <el-icon><Plus /></el-icon>
-        新增社群
-      </el-button>
+      <h1>志愿社群</h1>
+      <p class="page-description">加入感兴趣的社群，与志同道合的志愿者一起交流分享，组织线下分享会</p>
     </div>
 
     <!-- 搜索筛选 -->
@@ -17,6 +15,7 @@
             placeholder="请输入社群名称"
             clearable
             style="width: 200px"
+            @keyup.enter="handleSearch"
           />
         </el-form-item>
         <el-form-item label="分类">
@@ -36,18 +35,6 @@
             <el-option label="其他" value="其他" />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select
-            v-model="searchForm.status"
-            placeholder="请选择状态"
-            clearable
-            style="width: 120px"
-          >
-            <el-option label="正常" :value="1" />
-            <el-option label="禁用" :value="2" />
-            <el-option label="解散" :value="3" />
-          </el-select>
-        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">
             <el-icon><Search /></el-icon>
@@ -62,188 +49,126 @@
     </div>
 
     <!-- 社群列表 -->
-    <div class="table-section">
-      <el-table :data="communityList" v-loading="loading" stripe>
-        <el-table-column prop="name" label="社群名称" width="200" />
-        <el-table-column prop="category" label="分类" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getCategoryTagType(row.category)">
-              {{ row.category }}
+    <div class="community-grid" v-loading="loading">
+      <div 
+        v-for="community in communityList" 
+        :key="community.id" 
+        class="community-card"
+        @click="handleViewDetail(community)"
+      >
+        <div class="card-header">
+          <div class="community-cover">
+            <img 
+              v-if="community.coverImage" 
+              :src="community.coverImage" 
+              :alt="community.name"
+              @error="handleImageError"
+            />
+            <div v-else class="default-cover">
+              <el-icon size="48"><ChatDotRound /></el-icon>
+            </div>
+          </div>
+          <div class="community-info">
+            <h3 class="community-name">{{ community.name }}</h3>
+            <el-tag :type="getCategoryTagType(community.category)" size="small">
+              {{ community.category }}
             </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" label="描述" show-overflow-tooltip />
-        <el-table-column prop="memberCount" label="成员数" width="100" />
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusTagType(row.status)">
-              {{ getStatusText(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180">
-          <template #default="{ row }">
-            {{ formatDateTime(row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="280" fixed="right">
-          <template #default="{ row }">
-            <el-button size="small" type="info" @click="handleView(row)">查看</el-button>
-            <el-button size="small" @click="handleEdit(row)">编辑</el-button>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <p class="community-description">{{ community.description }}</p>
+          <div class="community-stats">
+            <div class="stat-item">
+              <el-icon><User /></el-icon>
+              <span>{{ community.memberCount || 0 }} 成员</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-footer">
+          <div class="action-buttons">
             <el-button 
-              size="small" 
-              :type="row.status === 1 ? 'warning' : 'success'"
-              @click="handleToggleStatus(row)"
+              v-if="!isLoggedIn" 
+              type="primary" 
+              size="small"
+              @click.stop="$router.push('/login')"
             >
-              {{ row.status === 1 ? '禁用' : '启用' }}
+              登录后加入
             </el-button>
             <el-button 
-              size="small" 
-              type="danger" 
-              :disabled="row.memberCount && row.memberCount > 0"
-              @click="handleDelete(row)"
+              v-else-if="!isMember(community.id)" 
+              type="primary" 
+              size="small"
+              @click.stop="handleJoin(community)"
+              :loading="joiningCommunity === community.id"
             >
-              删除
+              加入社群
             </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination-section">
-        <el-pagination
-          v-model:current-page="pagination.pageNo"
-          v-model:page-size="pagination.pageSize"
-          :total="pagination.total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
+            <el-button 
+              v-else 
+              type="success" 
+              size="small"
+              @click.stop="handleViewDetail(community)"
+            >
+              已加入
+            </el-button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- 新增/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑社群' : '新增社群'" width="600px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-        <el-form-item label="社群名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入社群名称" />
-        </el-form-item>
-        <el-form-item label="分类" prop="category">
-          <el-select v-model="form.category" placeholder="请选择分类" style="width: 100%">
-            <el-option label="环保公益" value="环保公益" />
-            <el-option label="教育助学" value="教育助学" />
-            <el-option label="扶贫助困" value="扶贫助困" />
-            <el-option label="医疗健康" value="医疗健康" />
-            <el-option label="文化传承" value="文化传承" />
-            <el-option label="应急救援" value="应急救援" />
-            <el-option label="社区服务" value="社区服务" />
-            <el-option label="其他" value="其他" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="社群描述" prop="description">
-          <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入社群描述" />
-        </el-form-item>
-        <el-form-item label="最大成员数">
-          <el-input-number v-model="form.maxMembers" :min="10" :max="5000" />
-        </el-form-item>
-        <el-form-item label="社群标签">
-          <el-input v-model="form.tags" placeholder="请输入标签，多个标签用逗号分隔" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
-      </template>
-    </el-dialog>
+    <!-- 空状态 -->
+    <div v-if="!loading && communityList.length === 0" class="empty-state">
+      <el-empty description="暂无社群数据">
+        <el-button type="primary" @click="handleReset">刷新页面</el-button>
+      </el-empty>
+    </div>
 
-    <!-- 查看社群对话框 -->
-    <el-dialog v-model="viewDialogVisible" title="社群详情" width="600px">
-      <div v-if="viewData" class="community-detail">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="社群名称">
-            {{ viewData.name }}
-          </el-descriptions-item>
-          <el-descriptions-item label="分类">
-            <el-tag :type="getCategoryTagType(viewData.category)">
-              {{ viewData.category }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="社群描述" :span="2">
-            {{ viewData.description }}
-          </el-descriptions-item>
-          <el-descriptions-item label="当前成员数">
-            {{ viewData.memberCount || 0 }}
-          </el-descriptions-item>
-          <el-descriptions-item label="最大成员数">
-            {{ viewData.maxMembers || 1000 }}
-          </el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="getStatusTagType(viewData.status)">
-              {{ getStatusText(viewData.status) }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="社群标签">
-            {{ viewData.tags || '无' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="创建时间">
-            {{ viewData.createTime }}
-          </el-descriptions-item>
-          <el-descriptions-item label="更新时间">
-            {{ viewData.updateTime }}
-          </el-descriptions-item>
-        </el-descriptions>
-      </div>
-      <template #footer>
-        <el-button @click="viewDialogVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
+    <!-- 分页 -->
+    <div v-if="communityList.length > 0" class="pagination-section">
+      <el-pagination
+        v-model:current-page="pagination.pageNo"
+        v-model:page-size="pagination.pageSize"
+        :total="pagination.total"
+        :page-sizes="[12, 24, 48, 96]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh } from '@element-plus/icons-vue'
+import { Search, Refresh, ChatDotRound, User } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/stores/auth'
+import { communityApi } from '@/api/index'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const loading = ref(false)
-const submitLoading = ref(false)
-const dialogVisible = ref(false)
-const isEdit = ref(false)
-const communityList = ref([])
-const formRef = ref()
-
-// 查看对话框相关
-const viewDialogVisible = ref(false)
-const viewData = ref<any>(null)
+const joiningCommunity = ref<number | null>(null)
+const communityList = ref<any[]>([])
+const memberStatusMap = ref<Record<number, boolean>>({})
 
 const searchForm = ref({
   keyword: '',
-  category: '',
-  status: null
+  category: ''
 })
 
 const pagination = ref({
   pageNo: 1,
-  pageSize: 20,
+  pageSize: 12,
   total: 0
 })
 
-const form = ref({
-  id: null,
-  name: '',
-  category: '',
-  description: '',
-  maxMembers: 1000,
-  tags: ''
-})
-
-const rules = {
-  name: [{ required: true, message: '请输入社群名称', trigger: 'blur' }],
-  category: [{ required: true, message: '请选择分类', trigger: 'change' }],
-  description: [{ required: true, message: '请输入社群描述', trigger: 'blur' }]
-}
-
+// 计算属性
+const isLoggedIn = computed(() => authStore.isLoggedIn)
 
 // 获取分类标签类型
 const getCategoryTagType = (category: string) => {
@@ -260,35 +185,13 @@ const getCategoryTagType = (category: string) => {
   return typeMap[category] || 'info'
 }
 
-// 获取状态标签类型
-const getStatusTagType = (status: number) => {
-  const typeMap: Record<number, string> = {
-    1: 'success',
-    2: 'warning',
-    3: 'danger'
-  }
-  return typeMap[status] || 'info'
+// 检查是否为社群成员
+const isMember = (communityId: number) => {
+  return memberStatusMap.value[communityId] || false
 }
 
-// 获取状态文本
-const getStatusText = (status: number) => {
-  const textMap: Record<number, string> = {
-    1: '正常',
-    2: '禁用',
-    3: '解散'
-  }
-  return textMap[status] || '未知'
-}
-
-// 格式化日期时间
-const formatDateTime = (dateTimeStr: string) => {
-  if (!dateTimeStr) return ''
-  // 将 "2025-10-25T22:30:31" 格式化为 "2025-10-25 22:30:31"
-  return dateTimeStr.replace('T', ' ')
-}
-
-// 加载数据
-const loadData = async () => {
+// 加载社群列表
+const loadCommunityList = async () => {
   loading.value = true
   try {
     const params = {
@@ -297,221 +200,347 @@ const loadData = async () => {
       ...searchForm.value
     }
     
-            const response = await fetch('/api/admin/community/list', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
-      },
-      body: JSON.stringify(params)
-    })
+    const response = await communityApi.getCommunityList(params)
+    console.log('社群列表API响应:', response)
     
-    const data = await response.json()
-    if (data.code === 200) {
-      communityList.value = data.data.records || []
-      pagination.value.total = data.data.total || 0
+    // 后端现在返回的是 Result<Page<Community>> 格式
+    // response 就是 Page<Community> 对象
+    if (response && response.records) {
+      communityList.value = response.records || []
+      pagination.value.total = response.total || 0
+      
+      // 如果用户已登录，检查成员状态
+      if (isLoggedIn.value) {
+        await checkMemberStatus()
+      }
     } else {
-      ElMessage.error(data.message || '加载数据失败')
+      console.error('社群列表响应格式异常:', response)
+      ElMessage.error('加载社群列表失败')
     }
   } catch (error) {
-    console.error('加载数据失败:', error)
-    ElMessage.error('加载数据失败')
+    console.error('加载社群列表失败:', error)
+    ElMessage.error('加载社群列表失败')
   } finally {
     loading.value = false
   }
 }
 
-// 新增社群
-const handleCreate = () => {
-  isEdit.value = false
-  form.value = {
-    id: null,
-    name: '',
-    category: '',
-    description: '',
-    maxMembers: 1000,
-    tags: ''
-  }
-  dialogVisible.value = true
-}
-
-// 编辑社群
-const handleEdit = (row: any) => {
-  isEdit.value = true
-  form.value = { ...row }
-  dialogVisible.value = true
-}
-
-// 查看社群
-const handleView = (row: any) => {
-  viewData.value = { ...row }
-  viewDialogVisible.value = true
-}
-
-// 切换状态
-const handleToggleStatus = async (row: any) => {
-  const newStatus = row.status === 1 ? 2 : 1
-  const action = newStatus === 1 ? '启用' : '禁用'
+// 检查成员状态
+const checkMemberStatus = async () => {
+  if (!isLoggedIn.value) return
   
   try {
-    await ElMessageBox.confirm(`确定要${action}社群"${row.name}"吗？`, '确认操作', {
-      type: 'warning'
-    })
-    
-    const response = await fetch(`/api/admin/community/status/${row.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
-      },
-      body: JSON.stringify({ status: newStatus })
-    })
-    
-    const data = await response.json()
-    if (data.code === 200) {
-      ElMessage.success(`${action}成功`)
-      loadData()
-    } else {
-      ElMessage.error(data.message || `${action}失败`)
-    }
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error(`${action}失败`)
-    }
-  }
-}
-
-// 删除社群
-const handleDelete = async (row: any) => {
-  try {
-    // 检查社群是否有成员
-    if (row.memberCount && row.memberCount > 0) {
-      ElMessage.warning(`社群"${row.name}"当前有 ${row.memberCount} 名成员，无法删除。请先移除所有成员后再删除社群。`)
-      return
-    }
-    
-    await ElMessageBox.confirm(`确定要删除社群"${row.name}"吗？删除后不可恢复！`, '确认删除', {
-      type: 'warning'
-    })
-    
-    const response = await fetch(`/api/admin/community/delete/${row.id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+    const promises = communityList.value.map(async (community) => {
+      try {
+        const response = await communityApi.isMember(community.id)
+        console.log(`社群${community.id}成员状态API响应:`, response)
+        
+        // request拦截器已经提取了data部分，所以response就是布尔值
+        memberStatusMap.value[community.id] = response || false
+      } catch (error) {
+        console.error(`检查社群${community.id}成员状态失败:`, error)
+        memberStatusMap.value[community.id] = false
       }
     })
     
-    const data = await response.json()
-    if (data.code === 200) {
-      ElMessage.success('删除成功')
-      loadData()
-    } else {
-      ElMessage.error(data.message || '删除失败')
-    }
+    await Promise.all(promises)
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
+    console.error('检查成员状态失败:', error)
   }
 }
 
-
-// 提交表单
-const handleSubmit = async () => {
-  if (!formRef.value) return
+// 加入社群
+const handleJoin = async (community: any) => {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
   
   try {
-    await formRef.value.validate()
-    submitLoading.value = true
+    await ElMessageBox.confirm(
+      `确定要加入社群"${community.name}"吗？`,
+      '确认加入',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
     
-    const url = isEdit.value ? '/api/admin/community/update' : '/api/admin/community/create'
-    const method = isEdit.value ? 'PUT' : 'POST'
+    joiningCommunity.value = community.id
     
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
-      },
-      body: JSON.stringify(form.value)
-    })
+    const response = await communityApi.joinCommunity(community.id)
+    console.log('加入社群API响应:', response)
     
-    const data = await response.json()
-    if (data.code === 200) {
-      ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
-      dialogVisible.value = false
-      loadData()
+    // request拦截器已经提取了data部分，所以response就是布尔值
+    if (response === true) {
+      ElMessage.success('加入社群成功')
+      memberStatusMap.value[community.id] = true
+      // 更新成员数量
+      community.memberCount = (community.memberCount || 0) + 1
     } else {
-      ElMessage.error(data.message || '操作失败')
+      ElMessage.error('加入社群失败')
     }
   } catch (error) {
-    console.error('提交失败:', error)
-    ElMessage.error('操作失败')
+    if (error !== 'cancel') {
+      console.error('加入社群失败:', error)
+      ElMessage.error('加入社群失败')
+    }
   } finally {
-    submitLoading.value = false
+    joiningCommunity.value = null
   }
+}
+
+// 查看社群详情
+const handleViewDetail = (community: any) => {
+  router.push(`/community/${community.id}`)
 }
 
 // 搜索
 const handleSearch = () => {
   pagination.value.pageNo = 1
-  loadData()
+  loadCommunityList()
 }
 
 // 重置
 const handleReset = () => {
-  searchForm.value = { keyword: '', category: '', status: null }
+  searchForm.value = { keyword: '', category: '' }
   pagination.value.pageNo = 1
-  loadData()
+  loadCommunityList()
 }
 
 // 分页大小改变
 const handleSizeChange = (size: number) => {
   pagination.value.pageSize = size
   pagination.value.pageNo = 1
-  loadData()
+  loadCommunityList()
 }
 
 // 当前页改变
 const handleCurrentChange = (page: number) => {
   pagination.value.pageNo = page
-  loadData()
+  loadCommunityList()
+}
+
+// 图片加载错误处理
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
 }
 
 onMounted(() => {
-  loadData()
+  loadCommunityList()
 })
 </script>
 
 <style scoped>
+.community-list {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: linear-gradient(135deg, #2c5aa0 0%, #4a7bc8 100%);
+  color: #fff;
+  padding: 60px 0;
+  text-align: center;
   margin-bottom: 20px;
+  /* 全宽铺满屏幕两侧（突破父级容器宽度限制） */
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+.page-header h1 {
+  font-size: 32px;
+  color: #fff;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.page-description {
+  font-size: 16px;
+  color: #fff;
+  opacity: 0.95;
+  margin: 0;
 }
 
 .search-section {
   background: #fff;
   padding: 20px;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
 }
 
-.table-section {
+.community-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.community-card {
   background: #fff;
-  padding: 20px;
-  border-radius: 4px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.community-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  padding: 20px 20px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.community-cover {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.community-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.default-cover {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.community-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.community-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.card-body {
+  padding: 15px 20px;
+}
+
+.community-description {
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 15px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.community-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.card-footer {
+  padding: 15px 20px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #f0f0f0;
+}
+
+.join-type {
+  flex: 1;
+}
+
+.action-buttons {
+  flex-shrink: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
 }
 
 .pagination-section {
-  margin-top: 20px;
-  text-align: right;
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
 }
 
-.community-detail {
-  padding: 10px 0;
+@media (max-width: 768px) {
+  .community-list {
+    padding: 15px;
+  }
+  
+  .page-header {
+    padding: 40px 0;
+  }
+  
+  .page-header h1 {
+    font-size: 28px;
+  }
+  
+  .page-description {
+    font-size: 14px;
+  }
+  
+  .community-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .search-section {
+    padding: 15px;
+  }
+  
+  .card-header {
+    padding: 15px 15px 0;
+  }
+  
+  .card-body {
+    padding: 10px 15px;
+  }
+  
+  .card-footer {
+    padding: 10px 15px 15px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .action-buttons {
+    width: 100%;
+  }
+  
+  .action-buttons .el-button {
+    width: 100%;
+  }
 }
 </style>
-
-

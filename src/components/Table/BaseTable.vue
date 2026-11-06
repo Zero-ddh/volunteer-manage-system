@@ -59,8 +59,8 @@
     <!-- 分页器 -->
     <div class="table-pagination" v-if="showPagination">
       <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
+        :current-page="currentPage"
+        :page-size="pageSize"
         :page-sizes="pageSizes"
         :total="total"
         :layout="paginationLayout"
@@ -69,12 +69,10 @@
       />
     </div>
   </div>
-  
-  
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { TableInstance, TableColumnCtx } from 'element-plus'
 
 interface Props {
@@ -126,31 +124,52 @@ const emit = defineEmits<Emits>()
 
 const tableRef = ref<TableInstance>()
 
-const currentPage = ref(props.currentPage)
-const pageSize = ref(props.pageSize)
-
+// 处理选择变化
 const handleSelectionChange = (selection: any[]) => {
   emit('selection-change', selection)
 }
 
+// 处理排序变化
 const handleSortChange = (sortInfo: any) => {
   emit('sort-change', sortInfo)
 }
 
+// 处理行点击
 const handleRowClick = (row: any, column: TableColumnCtx<any>, event: Event) => {
   emit('row-click', row, column, event)
 }
 
+// 处理每页条数变化
 const handleSizeChange = (size: number) => {
   emit('size-change', size)
 }
 
+// 处理当前页变化
 const handleCurrentChange = (page: number) => {
   emit('current-change', page)
 }
 
+// 清除选择
+const clearSelection = () => {
+  tableRef.value?.clearSelection()
+}
+
+// 切换选择状态
+const toggleRowSelection = (row: any, selected?: boolean) => {
+  tableRef.value?.toggleRowSelection(row, selected)
+}
+
+// 切换全选状态
+const toggleAllSelection = () => {
+  tableRef.value?.toggleAllSelection()
+}
+
+// 暴露方法
 defineExpose({
-  tableRef
+  tableRef,
+  clearSelection,
+  toggleRowSelection,
+  toggleAllSelection
 })
 </script>
 
@@ -182,5 +201,3 @@ defineExpose({
   }
 }
 </style>
-
-

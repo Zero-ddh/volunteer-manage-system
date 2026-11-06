@@ -1,9 +1,10 @@
-import axios, { type InternalAxiosRequestConfig } from 'axios'
+import axios from 'axios'
+import type { AxiosInstance, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 
 // 创建axios实例
-const service = axios.create({
-  baseURL: 'http://localhost:8080/api', // 后端API地址
+const service: AxiosInstance = axios.create({
+  baseURL: '/api', // 基础URL
   timeout: 10000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'
@@ -12,9 +13,9 @@ const service = axios.create({
 
 // 请求拦截器
 service.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  (config) => {
     // 从localStorage获取token
-    const token = localStorage.getItem('admin-token')
+    const token = localStorage.getItem('token')
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -28,24 +29,21 @@ service.interceptors.request.use(
 
 // 响应拦截器
 service.interceptors.response.use(
-  (response) => {
-    // 如果是blob类型（文件下载），直接返回response.data
-    if (response.config.responseType === 'blob') {
+  (response: AxiosResponse) => {
+    // 如果是blob类型（文件下载），直接返回
+    if (response.config.responseType === 'blob' || response.data instanceof Blob) {
       return response.data
     }
     
-    const { code, message } = response.data
+    const { code, message, data } = response.data
     
-    // 如果业务状态码不是200，则抛出错误
-    if (code !== 200) {
-      const error = new Error(message || '请求失败') as Error & { code: number; response: typeof response }
-      error.code = code
-      error.response = response
-      return Promise.reject(error)
+    // 请求成功
+    if (code === 200) {
+      return data
     }
     
-    // 业务成功，返回数据
-    return response.data
+    // 业务错误 - 只抛出错误，不显示消息（由调用方处理）
+    return Promise.reject(new Error(message || '请求失败'))
   },
   (error) => {
     console.error('响应错误:', error)
@@ -59,7 +57,7 @@ service.interceptors.response.use(
         case 401:
           message = '未授权，请重新登录'
           // 清除token并跳转到登录页
-          localStorage.removeItem('admin-token')
+          localStorage.removeItem('token')
           window.location.href = '/login'
           break
         case 403:
@@ -76,6 +74,8 @@ service.interceptors.response.use(
       }
     } else if (error.code === 'ECONNABORTED') {
       message = '请求超时'
+    } else if (error.message) {
+      message = error.message
     }
     
     ElMessage.error(message)
