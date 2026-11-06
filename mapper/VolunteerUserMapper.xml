@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.volunteer.mapper.VolunteerUserMapper">
+
+    <!-- 分页查询志愿者用户列表 -->
+    <select id="selectVolunteerList" resultType="com.volunteer.vo.VolunteerUserListVO">
+        SELECT 
+            vu.id,
+            vu.username,
+            vu.real_name as realName,
+            vu.phone,
+            vu.email,
+            vu.id_card as idCard,
+            CASE vu.gender 
+                WHEN 1 THEN '男' 
+                WHEN 2 THEN '女' 
+                ELSE '未知' 
+            END as genderText,
+            vu.age,
+            vu.address,
+            CASE vu.status 
+                WHEN 1 THEN '正常' 
+                WHEN 0 THEN '禁用' 
+                ELSE '未知' 
+            END as statusText,
+            vu.status,
+            -- 等级字段已屏蔽，改为使用星级字段
+            -- CASE 
+            --     WHEN COALESCE(vs.total_service_hours, 0) >= 500 THEN '专家'
+            --     WHEN COALESCE(vs.total_service_hours, 0) >= 200 THEN '高级'
+            --     WHEN COALESCE(vs.total_service_hours, 0) >= 50 THEN '中级'
+            --     ELSE '初级'
+            -- END as level,
+            -- CASE 
+            --     WHEN COALESCE(vs.total_service_hours, 0) >= 500 THEN 4
+            --     WHEN COALESCE(vs.total_service_hours, 0) >= 200 THEN 3
+            --     WHEN COALESCE(vs.total_service_hours, 0) >= 50 THEN 2
+            --     ELSE 1
+            -- END as levelValue,
+            COALESCE(vu.total_service_hours, 0) as totalServiceHours,
+            COALESCE(vs.activity_count, 0) as activityCount,
+            COALESCE(vu.total_points, 0) as totalPoints,
+            vu.star_level as starLevel,
+            vu.star_rating_time as starRatingTime,
+            vu.created_time as createdTime,
+            vu.last_login_time as lastLoginTime
+        FROM volunteer_user vu
+        LEFT JOIN (
+            SELECT 
+                user_id,
+                COUNT(DISTINCT activity_id) as activity_count
+            FROM service_record 
+            WHERE deleted = 0
+            GROUP BY user_id
+        ) vs ON vu.id = vs.user_id
+        WHERE vu.deleted = 0
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (
+                vu.real_name LIKE CONCAT('%', #{query.keyword}, '%')
+                OR vu.username LIKE CONCAT('%', #{query.keyword}, '%')
+                OR vu.email LIKE CONCAT('%', #{query.keyword}, '%')
+            )
+        </if>
+        <if test="query.status != null">
+            AND vu.status = #{query.status}
+        </if>
+        <if test="query.gender != null">
+            AND vu.gender = #{query.gender}
+        </if>
+        <if test="query.starLevel != null">
+            AND vu.star_level = #{query.starLevel}
+        </if>
+        <if test="query.region != null and query.region != ''">
+            AND vu.address LIKE CONCAT('%', #{query.region}, '%')
+        </if>
+        <if test="query.minAge != null">
+            AND vu.age >= #{query.minAge}
+        </if>
+        <if test="query.maxAge != null">
+            AND vu.age &lt;= #{query.maxAge}
+        </if>
+        <if test="query.minServiceHours != null">
+            AND COALESCE(vu.total_service_hours, 0) >= #{query.minServiceHours}
+        </if>
+        <if test="query.maxServiceHours != null">
+            AND COALESCE(vu.total_service_hours, 0) &lt;= #{query.maxServiceHours}
+        </if>
+        <if test="query.registerTimeStart != null">
+            AND vu.created_time >= #{query.registerTimeStart}
+        </if>
+        <if test="query.registerTimeEnd != null">
+            AND vu.created_time &lt;= #{query.registerTimeEnd}
+        </if>
+        <choose>
+            <when test="query.sortField == 'service_hours'">
+                ORDER BY COALESCE(vu.total_service_hours, 0) ${query.sortOrder}
+            </when>
+            <when test="query.sortField == 'activity_count'">
+                ORDER BY COALESCE(vs.activity_count, 0) ${query.sortOrder}
+            </when>
+            <when test="query.sortField == 'points'">
+                ORDER BY COALESCE(vu.total_points, 0) ${query.sortOrder}
+            </when>
+            <when test="query.sortField == 'created_time'">
+                ORDER BY vu.created_time ${query.sortOrder}
+            </when>
+            <when test="query.sortField == 'id'">
+                ORDER BY vu.id ${query.sortOrder}
+            </when>
+            <otherwise>
+                ORDER BY vu.id ASC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 获取志愿者统计信息 -->
+    <select id="selectVolunteerStatistics" resultType="com.volunteer.vo.VolunteerStatisticsVO">
+        SELECT 
+            COUNT(*) as totalVolunteers,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as activeVolunteers,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as inactiveVolunteers,
+            SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as pendingVolunteers,
+            COALESCE(SUM(vu.total_service_hours), 0) as totalServiceHours,
+            COALESCE(AVG(vu.total_service_hours), 0) as avgServiceHours,
+            SUM(CASE WHEN vu.created_time >= DATE_SUB(NOW(), INTERVAL 1 MONTH) THEN 1 ELSE 0 END) as monthlyNewVolunteers,
+            COUNT(DISTINCT CASE WHEN vs.last_activity_time >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN vu.id END) as activeVolunteers30Days
+        FROM volunteer_user vu
+        LEFT JOIN (
+            SELECT 
+                user_id,
+                MAX(created_time) as last_activity_time
+            FROM service_record 
+            WHERE deleted = 0
+            GROUP BY user_id
+        ) vs ON vu.id = vs.user_id
+        WHERE vu.deleted = 0
+    </select>
+
+    <!-- 批量更新志愿者状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE volunteer_user 
+        SET status = #{status}, updated_time = NOW()
+        WHERE id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+        AND deleted = 0
+    </update>
+
+</mapper>

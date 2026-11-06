@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.volunteer.mapper.CheckinMapper">
+
+    <!-- 分页查询签到详情列表（包含用户信息） -->
+    <select id="selectCheckinDetailPage" resultType="com.volunteer.vo.CheckinDetailVO">
+        SELECT 
+            c.id,
+            c.activity_id as activityId,
+            c.user_id as userId,
+            vu.real_name as userName,
+            vu.phone as userPhone,
+            c.checkin_time as checkinTime,
+            c.checkout_time as checkoutTime,
+            c.checkin_location as checkinLocation,
+            c.checkout_location as checkoutLocation,
+            c.actual_service_hours as serviceHours,
+            c.status,
+            c.remark,
+            a.title as activityTitle,
+            a.start_time as activityStartTime,
+            a.end_time as activityEndTime,
+            c.created_time as createdTime,
+            c.updated_time as updatedTime
+        FROM activity_checkin c
+        LEFT JOIN volunteer_user vu ON c.user_id = vu.id
+        LEFT JOIN activity a ON c.activity_id = a.id
+        WHERE c.deleted = 0
+        <if test="activityId != null">
+            AND c.activity_id = #{activityId}
+        </if>
+        <if test="status != null">
+            AND c.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                vu.real_name LIKE CONCAT('%', #{keyword}, '%')
+                OR vu.phone LIKE CONCAT('%', #{keyword}, '%')
+                OR a.title LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        ORDER BY c.id DESC
+    </select>
+
+    <!-- 获取用户签到记录（包含活动信息） -->
+    <select id="selectUserCheckinsWithActivity" resultType="com.volunteer.vo.CheckinDetailVO">
+        SELECT 
+            c.id,
+            c.activity_id as activityId,
+            c.user_id as userId,
+            c.checkin_time as checkinTime,
+            c.checkout_time as checkoutTime,
+            c.checkin_location as checkinLocation,
+            c.checkout_location as checkoutLocation,
+            c.actual_service_hours as serviceHours,
+            c.status,
+            c.remark,
+            c.created_time as createdTime,
+            c.updated_time as updatedTime,
+            a.title as activityTitle,
+            a.start_time as activityStartTime,
+            a.end_time as activityEndTime,
+            vu.real_name as userName,
+            vu.phone as userPhone
+        FROM activity_checkin c
+        LEFT JOIN activity a ON c.activity_id = a.id
+        LEFT JOIN volunteer_user vu ON c.user_id = vu.id
+        WHERE c.user_id = #{userId}
+        AND c.deleted = 0
+        <if test="activityTitle != null and activityTitle != ''">
+            AND a.title LIKE CONCAT('%', #{activityTitle}, '%')
+        </if>
+        ORDER BY c.checkin_time DESC
+    </select>
+
+    <!-- 统计用户总服务时长（从签到表） -->
+    <select id="selectTotalServiceHoursByUserId" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(actual_service_hours), 0)
+        FROM activity_checkin
+        WHERE user_id = #{userId}
+        AND deleted = 0
+        AND actual_service_hours IS NOT NULL
+        AND actual_service_hours > 0
+    </select>
+
+</mapper>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.volunteer.mapper.ServiceCaseMapper">
+
+    <!-- 分页查询用户典型案例 -->
+    <select id="selectUserServiceCases" resultType="com.volunteer.entity.ServiceCase">
+        SELECT 
+            sc.*,
+            a.title as activity_title,
+            vu.real_name as user_name
+        FROM service_case sc
+        LEFT JOIN activity a ON sc.activity_id = a.id
+        LEFT JOIN volunteer_user vu ON sc.user_id = vu.id
+        WHERE sc.user_id = #{userId}
+        AND sc.deleted = 0
+        <if test="caseType != null">
+            AND sc.case_type = #{caseType}
+        </if>
+        ORDER BY sc.created_time DESC
+    </select>
+
+    <!-- 分页查询精选案例 -->
+    <select id="selectFeaturedCases" resultType="com.volunteer.entity.ServiceCase">
+        SELECT 
+            sc.*,
+            a.title as activity_title,
+            vu.real_name as user_name
+        FROM service_case sc
+        LEFT JOIN activity a ON sc.activity_id = a.id
+        LEFT JOIN volunteer_user vu ON sc.user_id = vu.id
+        WHERE sc.is_featured = 1
+        AND sc.status = 1
+        AND sc.deleted = 0
+        <if test="caseType != null">
+            AND sc.case_type = #{caseType}
+        </if>
+        ORDER BY sc.created_time DESC
+    </select>
+
+    <!-- 分页查询所有案例（管理后台） -->
+    <select id="selectAllCases" resultType="com.volunteer.entity.ServiceCase">
+        SELECT 
+            sc.*,
+            a.title as activity_title,
+            vu.real_name as user_name
+        FROM service_case sc
+        LEFT JOIN activity a ON sc.activity_id = a.id
+        LEFT JOIN volunteer_user vu ON sc.user_id = vu.id
+        WHERE sc.deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND (sc.title LIKE CONCAT('%', #{keyword}, '%') 
+                 OR sc.content LIKE CONCAT('%', #{keyword}, '%')
+                 OR vu.real_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="caseType != null">
+            AND sc.case_type = #{caseType}
+        </if>
+        <if test="status != null">
+            AND sc.status = #{status}
+        </if>
+        ORDER BY sc.created_time DESC
+    </select>
+
+    <!-- 增加浏览次数 -->
+    <update id="incrementViewCount">
+        UPDATE service_case 
+        SET view_count = view_count + 1
+        WHERE id = #{id}
+        AND deleted = 0
+    </update>
+
+    <!-- 增加点赞次数 -->
+    <update id="incrementLikeCount">
+        UPDATE service_case 
+        SET like_count = like_count + 1
+        WHERE id = #{id}
+        AND deleted = 0
+    </update>
+
+    <!-- 获取案例统计信息 -->
+    <select id="selectCaseStats" resultType="com.volunteer.entity.ServiceCase">
+        SELECT 
+            id,
+            case_type,
+            is_featured,
+            view_count,
+            like_count,
+            status
+        FROM service_case
+        WHERE user_id = #{userId}
+        AND deleted = 0
+    </select>
+
+</mapper>

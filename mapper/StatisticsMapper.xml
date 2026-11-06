@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.volunteer.mapper.StatisticsMapper">
+
+    <!-- 获取活动统计列表 -->
+    <select id="selectActivityStatistics" resultType="com.volunteer.vo.ActivityStatisticsDTO">
+        SELECT 
+            a.id as activityId,
+            a.title as activityTitle,
+            COALESCE(ac.category_name, '未分类') as categoryName,
+            COALESCE(u.username, '未知') as organizerName,
+            DATE_FORMAT(a.start_time, '%Y-%m-%d %H:%i') as startTime,
+            DATE_FORMAT(a.end_time, '%Y-%m-%d %H:%i') as endTime,
+            COUNT(DISTINCT ar.id) as totalRegistrations,
+            COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END) as approvedRegistrations,
+            COUNT(DISTINCT c.id) as checkinCount,
+            a.max_participants as maxParticipants,
+            a.status,
+            COALESCE(SUM(c.actual_service_hours), 0) as totalServiceHours,
+            CASE 
+                WHEN COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END) > 0 
+                THEN ROUND(COUNT(DISTINCT c.id) * 100.0 / COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END), 2)
+                ELSE 0 
+            END as completionRate,
+            CASE 
+                WHEN a.max_participants > 0 
+                THEN ROUND(COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END) * 100.0 / a.max_participants, 2)
+                ELSE 0 
+            END as registrationRate,
+            CASE 
+                WHEN COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END) > 0
+                THEN ROUND(SUM(c.actual_service_hours) / COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END), 2)
+                ELSE 0
+            END as avgServiceHours
+        FROM activity a
+        LEFT JOIN activity_category ac ON a.category_id = ac.id
+        LEFT JOIN sys_user u ON a.organizer_id = u.id
+        LEFT JOIN activity_registration ar ON a.id = ar.activity_id AND ar.deleted = 0
+        LEFT JOIN activity_checkin c ON a.id = c.activity_id AND c.deleted = 0
+        WHERE a.deleted = 0
+        <if test="activityTitle != null and activityTitle != ''">
+            AND a.title LIKE CONCAT('%', #{activityTitle}, '%')
+        </if>
+        <if test="year != null">
+            AND YEAR(a.start_time) = #{year}
+        </if>
+        GROUP BY a.id, a.title, a.category_id, a.organizer_id, a.start_time, a.end_time, a.max_participants, a.status
+        ORDER BY a.start_time DESC
+    </select>
+
+    <!-- 获取单个活动统计详情 -->
+    <select id="selectActivityStatisticsDetail" resultType="com.volunteer.vo.ActivityStatisticsDTO">
+        SELECT 
+            a.id as activityId,
+            a.title as activityTitle,
+            COALESCE(ac.category_name, '未分类') as categoryName,
+            COALESCE(u.username, '未知') as organizerName,
+            DATE_FORMAT(a.start_time, '%Y-%m-%d %H:%i') as startTime,
+            DATE_FORMAT(a.end_time, '%Y-%m-%d %H:%i') as endTime,
+            COUNT(DISTINCT ar.id) as totalRegistrations,
+            COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END) as approvedRegistrations,
+            COUNT(DISTINCT c.id) as checkinCount,
+            a.max_participants as maxParticipants,
+            a.status,
+            COALESCE(SUM(c.actual_service_hours), 0) as totalServiceHours,
+            CASE 
+                WHEN COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END) > 0 
+                THEN ROUND(COUNT(DISTINCT c.id) * 100.0 / COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END), 2)
+                ELSE 0 
+            END as completionRate,
+            CASE 
+                WHEN a.max_participants > 0 
+                THEN ROUND(COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END) * 100.0 / a.max_participants, 2)
+                ELSE 0 
+            END as registrationRate,
+            CASE 
+                WHEN COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END) > 0
+                THEN ROUND(SUM(c.actual_service_hours) / COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END), 2)
+                ELSE 0
+            END as avgServiceHours
+        FROM activity a
+        LEFT JOIN activity_category ac ON a.category_id = ac.id
+        LEFT JOIN sys_user u ON a.organizer_id = u.id
+        LEFT JOIN activity_registration ar ON a.id = ar.activity_id AND ar.deleted = 0
+        LEFT JOIN activity_checkin c ON a.id = c.activity_id AND c.deleted = 0
+        WHERE a.id = #{activityId} AND a.deleted = 0
+        GROUP BY a.id, a.title, a.category_id, a.organizer_id, a.start_time, a.end_time, a.max_participants, a.status
+    </select>
+
+    <!-- 获取组织者统计列表 -->
+    <select id="selectOrganizerStatistics" resultType="com.volunteer.vo.OrganizerStatisticsDTO">
+        SELECT 
+            o.id as organizerId,
+            o.username as organizerName,
+            COUNT(DISTINCT a.id) as totalActivities,
+            COUNT(DISTINCT CASE WHEN a.status = 4 THEN a.id END) as completedActivities,
+            COUNT(DISTINCT CASE WHEN a.status = 3 THEN a.id END) as ongoingActivities,
+            COUNT(DISTINCT ar.id) as totalRegistrations,
+            COUNT(DISTINCT c.id) as checkinCount,
+            COALESCE(SUM(c.actual_service_hours), 0) as totalServiceHours,
+            COUNT(DISTINCT ar.user_id) as uniqueVolunteers,
+            CASE 
+                WHEN COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END) > 0
+                THEN ROUND(COUNT(DISTINCT c.id) * 100.0 / COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END), 2)
+                ELSE 0
+            END as avgCompletionRate
+        FROM sys_user o
+        LEFT JOIN activity a ON o.id = a.organizer_id AND a.deleted = 0
+        <if test="year != null">
+            AND YEAR(a.start_time) = #{year}
+        </if>
+        LEFT JOIN activity_registration ar ON a.id = ar.activity_id AND ar.deleted = 0
+        LEFT JOIN activity_checkin c ON a.id = c.activity_id AND c.deleted = 0
+        WHERE o.deleted = 0
+        GROUP BY o.id, o.username
+        HAVING totalActivities > 0
+        ORDER BY totalActivities DESC
+    </select>
+
+    <!-- 获取活动分类统计 -->
+    <select id="selectCategoryStatistics" resultType="com.volunteer.vo.CategoryStatisticsDTO">
+        SELECT 
+            ac.id as categoryId,
+            ac.category_name as categoryName,
+            ac.category_code as categoryCode,
+            COUNT(DISTINCT a.id) as activityCount,
+            COUNT(DISTINCT ar.id) as totalRegistrations,
+            COUNT(DISTINCT c.id) as checkinCount,
+            COALESCE(SUM(c.actual_service_hours), 0) as totalServiceHours,
+            CASE 
+                WHEN COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END) > 0
+                THEN ROUND(COUNT(DISTINCT c.id) * 100.0 / COUNT(DISTINCT CASE WHEN ar.status = 2 THEN ar.id END), 2)
+                ELSE 0
+            END as completionRate
+        FROM activity_category ac
+        LEFT JOIN activity a ON ac.id = a.category_id AND a.deleted = 0
+        <if test="year != null">
+            AND YEAR(a.start_time) = #{year}
+        </if>
+        LEFT JOIN activity_registration ar ON a.id = ar.activity_id AND ar.deleted = 0
+        LEFT JOIN activity_checkin c ON a.id = c.activity_id AND c.deleted = 0
+        WHERE ac.deleted = 0
+        GROUP BY ac.id, ac.category_name, ac.category_code
+        HAVING activityCount > 0
+        ORDER BY activityCount DESC
+    </select>
+
+    <!-- 获取志愿者排名列表 -->
+    <select id="selectVolunteerRanking" resultType="com.volunteer.vo.VolunteerRankingDTO">
+        SELECT 
+            vu.id as userId,
+            vu.username as username,
+            vu.real_name as realName,
+            vu.phone as phone,
+            COALESCE(SUM(ac.actual_service_hours), 0) as totalServiceHours,
+            COALESCE(vu.star_level, 0) as starLevel
+        FROM volunteer_user vu
+        INNER JOIN activity_checkin ac ON vu.id = ac.user_id 
+            AND ac.deleted = 0 
+            AND ac.actual_service_hours IS NOT NULL
+            AND ac.actual_service_hours > 0
+        WHERE vu.deleted = 0 AND vu.status = 1
+        <if test="username != null and username != ''">
+            AND vu.username LIKE CONCAT('%', #{username}, '%')
+        </if>
+        <if test="realName != null and realName != ''">
+            AND vu.real_name LIKE CONCAT('%', #{realName}, '%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND vu.phone LIKE CONCAT('%', #{phone}, '%')
+        </if>
+        <if test="year != null">
+            AND YEAR(ac.checkin_time) = #{year}
+        </if>
+        GROUP BY vu.id, vu.username, vu.real_name, vu.phone, vu.star_level
+        HAVING totalServiceHours > 0
+        ORDER BY totalServiceHours DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取志愿者的分类服务分布 -->
+    <select id="selectVolunteerCategoryDistribution" resultType="java.util.HashMap">
+        SELECT 
+            ac.category_name as categoryName,
+            COUNT(DISTINCT sr.id) as activityCount,
+            COALESCE(SUM(sr.service_hours), 0) as totalHours
+        FROM service_record sr
+        JOIN activity a ON sr.activity_id = a.id AND a.deleted = 0
+        JOIN activity_category ac ON a.category_id = ac.id
+        WHERE sr.user_id = #{userId}
+            AND sr.deleted = 0
+            AND sr.status = 1
+        <if test="year != null">
+            AND YEAR(sr.service_date) = #{year}
+        </if>
+        GROUP BY ac.id, ac.category_name
+        ORDER BY totalHours DESC
+    </select>
+
+    <!-- 获取志愿者的月度统计 -->
+    <select id="selectVolunteerMonthlyStatistics" resultType="java.util.HashMap">
+        SELECT 
+            DATE_FORMAT(sr.service_date, '%m') as month,
+            COUNT(DISTINCT sr.id) as activityCount,
+            COALESCE(SUM(sr.service_hours), 0) as totalHours
+        FROM service_record sr
+        WHERE sr.user_id = #{userId}
+            AND sr.deleted = 0
+            AND sr.status = 1
+        <if test="year != null">
+            AND YEAR(sr.service_date) = #{year}
+        </if>
+        GROUP BY DATE_FORMAT(sr.service_date, '%m')
+        ORDER BY month
+    </select>
+
+    <!-- 获取志愿者在年度中的排名 -->
+    <select id="selectVolunteerRankingInYear" resultType="java.lang.Integer">
+        SELECT 
+            ranking
+        FROM (
+            SELECT 
+                vu.id,
+                RANK() OVER (ORDER BY COALESCE(SUM(sr.service_hours), 0) DESC) as ranking
+            FROM volunteer_user vu
+            LEFT JOIN service_record sr ON vu.id = sr.user_id AND sr.deleted = 0 AND sr.status = 1
+                AND YEAR(sr.service_date) = #{year}
+            WHERE vu.deleted = 0 AND vu.status = 1
+            GROUP BY vu.id
+            HAVING SUM(sr.service_hours) > 0
+        ) ranked
+        WHERE id = #{userId}
+    </select>
+
+    <!-- 获取志愿者的年度服务统计 -->
+    <select id="selectVolunteerYearlyStatistics" resultType="java.util.HashMap">
+        SELECT 
+            vu.id as userId,
+            vu.real_name as realName,
+            vu.star_level as starLevel,
+            COALESCE(SUM(sr.service_hours), 0) as totalServiceHours,
+            COUNT(DISTINCT sr.id) as activityCount,
+            COALESCE(vu.total_points, 0) as totalPoints,
+            COUNT(DISTINCT sr.service_date) as serviceDays
+        FROM volunteer_user vu
+        LEFT JOIN service_record sr ON vu.id = sr.user_id 
+            AND sr.deleted = 0 
+            AND sr.status = 1
+            AND YEAR(sr.service_date) = #{year}
+        WHERE vu.id = #{userId}
+        GROUP BY vu.id, vu.real_name, vu.total_points, vu.star_level
+    </select>
+
+    <!-- 获取志愿者服务领域统计 -->
+    <select id="selectVolunteerFieldStatistics" resultType="com.volunteer.vo.VolunteerFieldStatisticsDTO">
+        SELECT 
+            vu.id as userId,
+            vu.username,
+            vu.real_name as realName,
+            vu.phone,
+            ac.category_name as categoryName,
+            COUNT(DISTINCT a.id) as activityCount
+        FROM volunteer_user vu
+        INNER JOIN activity_checkin ac_checkin ON vu.id = ac_checkin.user_id 
+            AND ac_checkin.deleted = 0
+        INNER JOIN activity a ON ac_checkin.activity_id = a.id AND a.deleted = 0
+        INNER JOIN activity_category ac ON a.category_id = ac.id AND ac.deleted = 0
+        WHERE vu.deleted = 0 AND vu.status = 1
+        <if test="username != null and username != ''">
+            AND vu.username LIKE CONCAT('%', #{username}, '%')
+        </if>
+        <if test="realName != null and realName != ''">
+            AND vu.real_name LIKE CONCAT('%', #{realName}, '%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND vu.phone LIKE CONCAT('%', #{phone}, '%')
+        </if>
+        <if test="year != null">
+            AND YEAR(ac_checkin.checkin_time) = #{year}
+        </if>
+        GROUP BY vu.id, vu.username, vu.real_name, vu.phone, ac.category_name, ac.id
+        ORDER BY vu.username, ac.category_name
+    </select>
+
+</mapper>
+
+

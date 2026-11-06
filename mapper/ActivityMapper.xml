@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.volunteer.mapper.ActivityMapper">
+
+    <!-- 分页查询活动列表（包含分类名称、组织者名称和实际报名人数） -->
+    <select id="selectActivityPageWithParticipants" resultType="com.volunteer.entity.Activity">
+        SELECT 
+            a.id,
+            a.title,
+            a.description,
+            a.category_id as categoryId,
+            a.organizer_id as organizerId,
+            a.start_time as startTime,
+            a.end_time as endTime,
+            a.location,
+            a.max_participants as maxParticipants,
+            COALESCE(reg_count.current_participants, 0) as currentParticipants,
+            a.status,
+            a.cover_image as coverImage,
+            a.requirements,
+            a.participation_conditions as participationConditions,
+            a.contact_info as contactInfo,
+            a.emergency_contact_name as emergencyContactName,
+            a.emergency_contact_phone as emergencyContactPhone,
+            a.created_time as createdTime,
+            a.updated_time as updatedTime,
+            a.deleted,
+            COALESCE(ac.category_name, '未分类') as categoryName,
+            COALESCE(u.username, '未知') as organizerName
+        FROM activity a
+        LEFT JOIN activity_category ac ON a.category_id = ac.id
+        LEFT JOIN sys_user u ON a.organizer_id = u.id
+        LEFT JOIN (
+            SELECT activity_id, COUNT(*) as current_participants
+            FROM activity_registration
+            WHERE status IN (1, 2) AND deleted = 0
+            GROUP BY activity_id
+        ) reg_count ON a.id = reg_count.activity_id
+        WHERE a.deleted = 0
+        <if test="status != null">
+            AND a.status = #{status}
+        </if>
+        <if test="status == null">
+            AND a.status IN (2, 3, 4)  <!-- 默认查询已发布、进行中、已结束状态 -->
+        </if>
+        <if test="categoryId != null">
+            AND a.category_id = #{categoryId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                a.title LIKE CONCAT('%', #{keyword}, '%')
+                OR a.description LIKE CONCAT('%', #{keyword}, '%')
+                OR a.location LIKE CONCAT('%', #{keyword}, '%')
+                OR u.username LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="location != null and location != ''">
+            AND a.location LIKE CONCAT('%', #{location}, '%')
+        </if>
+        <if test="startTimeBegin != null and startTimeBegin != ''">
+            AND a.start_time >= STR_TO_DATE(#{startTimeBegin}, '%Y-%m-%d %H:%i:%s')
+        </if>
+        <if test="startTimeEnd != null and startTimeEnd != ''">
+            AND a.start_time &lt;= STR_TO_DATE(#{startTimeEnd}, '%Y-%m-%d %H:%i:%s')
+        </if>
+        ORDER BY a.created_time DESC
+    </select>
+
+    <!-- 管理后台分页查询活动列表（包含分类名称、组织者名称和实际报名人数） -->
+    <select id="selectAdminActivityPageWithParticipants" resultType="com.volunteer.entity.Activity">
+        SELECT 
+            a.id,
+            a.title,
+            a.description,
+            a.category_id as categoryId,
+            a.organizer_id as organizerId,
+            a.start_time as startTime,
+            a.end_time as endTime,
+            a.location,
+            a.max_participants as maxParticipants,
+            COALESCE(reg_count.current_participants, 0) as currentParticipants,
+            a.status,
+            a.cover_image as coverImage,
+            a.requirements,
+            a.participation_conditions as participationConditions,
+            a.contact_info as contactInfo,
+            a.emergency_contact_name as emergencyContactName,
+            a.emergency_contact_phone as emergencyContactPhone,
+            a.created_time as createdTime,
+            a.updated_time as updatedTime,
+            a.deleted,
+            COALESCE(ac.category_name, '未分类') as categoryName,
+            COALESCE(u.username, '未知') as organizerName
+        FROM activity a
+        LEFT JOIN activity_category ac ON a.category_id = ac.id
+        LEFT JOIN sys_user u ON a.organizer_id = u.id
+        LEFT JOIN (
+            SELECT activity_id, COUNT(*) as current_participants
+            FROM activity_registration
+            WHERE status IN (1, 2) AND deleted = 0
+            GROUP BY activity_id
+        ) reg_count ON a.id = reg_count.activity_id
+        WHERE a.deleted = 0
+        <if test="status != null">
+            AND a.status = #{status}
+        </if>
+        <if test="categoryId != null">
+            AND a.category_id = #{categoryId}
+        </if>
+        <if test="organizerId != null">
+            AND a.organizer_id = #{organizerId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                a.title LIKE CONCAT('%', #{keyword}, '%')
+                OR a.description LIKE CONCAT('%', #{keyword}, '%')
+                OR a.location LIKE CONCAT('%', #{keyword}, '%')
+                OR u.username LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        ORDER BY a.created_time DESC
+    </select>
+
+    <!-- 根据ID获取活动详情（包含分类名称、组织者名称和实际报名人数） -->
+    <select id="selectActivityDetailWithParticipantsById" resultType="com.volunteer.entity.Activity">
+        SELECT 
+            a.id,
+            a.title,
+            a.description,
+            a.category_id as categoryId,
+            a.organizer_id as organizerId,
+            a.start_time as startTime,
+            a.end_time as endTime,
+            a.location,
+            a.max_participants as maxParticipants,
+            COALESCE(reg_count.current_participants, 0) as currentParticipants,
+            a.status,
+            a.cover_image as coverImage,
+            a.requirements,
+            a.participation_conditions as participationConditions,
+            a.contact_info as contactInfo,
+            a.emergency_contact_name as emergencyContactName,
+            a.emergency_contact_phone as emergencyContactPhone,
+            a.created_time as createdTime,
+            a.updated_time as updatedTime,
+            a.deleted,
+            COALESCE(ac.category_name, '未分类') as categoryName,
+            COALESCE(u.username, '未知') as organizerName
+        FROM activity a
+        LEFT JOIN activity_category ac ON a.category_id = ac.id
+        LEFT JOIN sys_user u ON a.organizer_id = u.id
+        LEFT JOIN (
+            SELECT activity_id, COUNT(*) as current_participants
+            FROM activity_registration
+            WHERE status IN (1, 2) AND deleted = 0
+            GROUP BY activity_id
+        ) reg_count ON a.id = reg_count.activity_id
+        WHERE a.id = #{id} AND a.deleted = 0
+    </select>
+
+</mapper>

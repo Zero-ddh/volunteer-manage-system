@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.volunteer.mapper.ServiceFootprintMapper">
+
+    <!-- 获取用户服务足迹数据 -->
+    <select id="selectUserFootprints" resultType="com.volunteer.entity.ServiceFootprint">
+        SELECT 
+            sf.*,
+            a.title as activity_title
+        FROM service_footprint sf
+        LEFT JOIN activity a ON sf.activity_id = a.id
+        WHERE sf.user_id = #{userId}
+        ORDER BY sf.service_date DESC
+    </select>
+
+    <!-- 根据服务记录ID获取足迹 -->
+    <select id="selectByServiceRecordId" resultType="com.volunteer.entity.ServiceFootprint">
+        SELECT *
+        FROM service_footprint
+        WHERE service_record_id = #{serviceRecordId}
+    </select>
+
+    <!-- 获取用户服务地点统计 -->
+    <select id="selectLocationStats" resultType="com.volunteer.entity.ServiceFootprint">
+        SELECT 
+            location_name,
+            latitude,
+            longitude,
+            COUNT(*) as service_count,
+            SUM(service_hours) as total_hours
+        FROM service_footprint
+        WHERE user_id = #{userId}
+        GROUP BY location_name, latitude, longitude
+        ORDER BY service_count DESC
+    </select>
+
+</mapper>

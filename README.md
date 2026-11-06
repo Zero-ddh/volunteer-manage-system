@@ -1,335 +1,422 @@
-# 志愿者活动服务平台 - 用户端
+# 志愿者活动服务平台 - 后端服务
 
 ## 项目简介
 
-志愿者活动服务平台用户端是一个面向志愿者和普通用户的Web应用，提供活动浏览、报名、服务记录查询、社群互动等完整的志愿者服务功能。
+志愿者活动服务平台后端是基于Spring Boot开发的RESTful API服务，提供用户认证、活动管理、行政管理、数据统计等完整的业务功能，支持志愿者活动服务平台的运营需求。
 
 ## 技术栈
 
 ### 核心框架
-- **Vue 3.5.22** - 渐进式JavaScript框架
-- **TypeScript 5.9** - 类型安全的JavaScript超集
-- **Vite 7.1.7** - 新一代前端构建工具
+- **Spring Boot 2.7.18** - Java企业级应用开发框架
+- **Spring Security** - 安全认证授权框架
+- **Spring MVC** - Web MVC框架
+- **MyBatis Plus 3.5.3.1** - MyBatis增强工具
 
-### UI组件库
-- **Element Plus 2.11.5** - 基于Vue 3的桌面端组件库
-- **@element-plus/icons-vue 2.3.2** - Element Plus图标库
+### 数据库
+- **MySQL 8.0** - 关系型数据库
+- **HikariCP** - 数据库连接池
 
-### 状态管理 & 路由
-- **Pinia 3.0.3** - Vue的官方状态管理库
-- **Vue Router 4.5.1** - Vue.js官方路由管理器
+### 认证授权
+- **JWT (jjwt 0.11.5)** - JSON Web Token认证
+- **Spring Security** - 安全框架
 
-### HTTP请求
-- **Axios 1.12.2** - 基于Promise的HTTP客户端
+### 工具库
+- **Lombok** - 简化Java代码开发
+- **Jackson** - JSON序列化/反序列化
+- **EasyExcel 3.3.2** - Excel处理工具
+- **iText 7.2.5** - PDF生成工具
+- **ZXing 3.5.1** - 二维码生成
 
-### 文档处理
-- **jsPDF 3.0.3** - PDF文档生成库
-- **html2canvas 1.4.1** - HTML转Canvas工具
+### 缓存
+- **Caffeine** - 高性能本地缓存
+- **Spring Cache** - 缓存抽象
 
-### 开发工具
-- **ESLint** - 代码质量检查工具
-- **vue-tsc** - Vue TypeScript类型检查
-- **vite-plugin-vue-devtools** - Vue开发者工具
+### 其他
+- **Spring AOP** - 面向切面编程
+- **Spring Validation** - 参数校验
 
 ## 项目结构
 
 ```
-volunteer-web/
-├── public/                      # 静态资源目录
-│   └── favicon.ico              # 网站图标
+volunteer-service-backend/
 ├── src/
-│   ├── api/                     # API接口封装
-│   │   ├── index.ts            # 基础axios配置
-│   │   ├── auth.ts             # 认证API
-│   │   ├── goods.ts            # 商品API
-│   │   ├── insurance.ts        # 保险API
-│   │   ├── message.ts          # 消息API
-│   │   ├── safety.ts           # 安全相关API
-│   │   ├── starVolunteers.ts   # 明星志愿者API
-│   │   └── user.ts             # 用户API
-│   ├── assets/                  # 资源文件
-│   │   ├── base.css            # 基础样式
-│   │   ├── logo.svg            # 项目Logo
-│   │   └── main.css            # 主样式
-│   ├── components/              # 公共组件
-│   │   ├── ActivitySkillRequirements.vue  # 活动技能要求
-│   │   ├── CertificatePreview.vue         # 证书预览
-│   │   ├── Dialog/             # 对话框组件
-│   │   ├── Form/               # 表单组件
-│   │   ├── icons/              # 图标组件
-│   │   ├── Layout/             # 布局组件
-│   │   ├── SkillManagement.vue  # 技能管理
-│   │   ├── SkillMatch.vue      # 技能匹配
-│   │   ├── Table/              # 表格组件
-│   │   └── VolunteerFilter.vue # 志愿者筛选
-│   ├── router/                  # 路由配置
-│   │   └── index.ts            # 路由定义
-│   ├── stores/                  # Pinia状态管理
-│   │   ├── auth.ts             # 认证状态
-│   │   ├── activity.ts         # 活动状态
-│   │   └── counter.ts          # 计数器示例
-│   ├── utils/                   # 工具函数
-│   │   └── request.ts          # 请求工具
-│   ├── views/                   # 页面组件
-│   │   ├── Activity/           # 活动相关页面
-│   │   ├── Auth/               # 认证页面（登录、注册）
-│   │   ├── Certificate/        # 证书管理
-│   │   ├── Community/          # 社群功能
-│   │   ├── Insurance/          # 保险服务
-│   │   ├── Profile/            # 个人中心
-│   │   ├── Recruitment/        # 招募信息
-│   │   └── ...                 # 其他功能页面
-│   ├── App.vue                 # 根组件
-│   └── main.ts                 # 应用入口
-├── index.html                   # HTML模板
-├── package.json                 # 项目依赖配置
-├── tsconfig.json                # TypeScript配置
-├── vite.config.ts               # Vite构建配置
-└── README.md                    # 项目说明文档
+│   ├── main/
+│   │   ├── java/com/volunteer/
+│   │   │   ├── config/              # 配置类
+│   │   │   │   ├── MybatisPlusConfig.java    # MyBatis配置
+│   │   │   │   ├── SecurityConfig.java       # 安全配置
+│   │   │   │   ├── WebConfig.java           # Web配置
+│   │   │   │   └── WebMvcConfig.java        # MVC配置
+│   │   │   ├── controller/          # 控制器层
+│   │   │   │   ├── ActivityController.java        # 活动管理
+│   │   │   │   ├── AdminUserController.java       # 用户管理
+│   │   │   │   ├── AuthController.java            # 认证登录
+│   │   │   │   ├── CommunityController.java       # 社群管理
+│   │   │   │   ├── RecruitmentController.java     # 招募管理
+│   │   │   │   ├── RegistrationController.java    # 报名管理
+│   │   │   │   ├── StatisticsController.java      # 数据统计
+│   │   │   │   └── ...                           # 其他控制器
+│   │   │   ├── service/             # 服务层
+│   │   │   │   ├── ActivityService.java           # 活动服务
+│   │   │   │   ├── AuthService.java               # 认证服务
+│   │   │   │   ├── CommunityService.java          # 社群服务
+│   │   │   │   └── ...                           # 其他服务
+│   │   │   ├── mapper/              # 数据访问层
+│   │   │   │   ├── ActivityMapper.java
+│   │   │   │   ├── UserMapper.java
+│   │   │   │   └── ...                           # 其他Mapper
+│   │   │   ├── entity/              # 实体类
+│   │   │   │   ├── Activity.java                  # 活动实体
+│   │   │   │   ├── SysUser.java                   # 用户实体
+│   │   │   │   ├── VolunteerUser.java            # 志愿者实体
+│   │   │   │   └── ...                           # 其他实体
+│   │   │   ├── dto/                 # 数据传输对象
+│   │   │   ├── vo/                  # 视图对象
+│   │   │   ├── exception/           # 异常处理
+│   │   │   │   ├── BusinessException.java        # 业务异常
+│   │   │   │   └── GlobalExceptionHandler.java   # 全局异常处理
+│   │   │   ├── interceptor/         # 拦截器
+│   │   │   │   └── JwtAuthenticationInterceptor.java  # JWT认证拦截器
+│   │   │   ├── utils/               # 工具类
+│   │   │   │   └── JwtUtils.java                 # JWT工具
+│   │   │   └── VolunteerServiceApplication.java  # 启动类
+│   │   └── resources/
+│   │       ├── mapper/              # MyBatis XML映射文件
+│   │       ├── application.yml      # 主配置文件
+│   │       └── application-dev.yml  # 开发环境配置
+│   └── test/                        # 测试代码
+├── logs/                            # 日志目录
+├── uploads/                         # 文件上传目录
+├── target/                          # 编译输出目录
+├── pom.xml                          # Maven项目配置
+├── start.bat                        # Windows启动脚本
+└── README.md                        # 项目说明文档
 ```
 
 ## 功能模块
 
-### 1. 用户认证
-- 用户注册：用户名/手机号注册
-- 用户登录：账号密码登录
-- 游客模式：无需登录即可浏览活动
+### 1. 用户认证模块
+- 用户注册、登录、登出
+- JWT Token生成和验证
+- 密码加密和重置
+- 用户角色权限控制
 
-### 2. 活动管理
-- 活动列表：浏览所有活动、按分类筛选
-- 活动详情：查看活动详细信息、报名要求
-- 活动报名：一键报名、报名状态查看
-- 我的活动：已报名活动、历史活动记录
-- 活动签到：扫码签到、位置签到
+### 2. 用户管理模块
+- 用户信息CRUD操作
+- 志愿者信息管理
+- 用户状态管理
+- 头像上传和管理
 
-### 3. 个人中心
-- 个人信息：资料编辑上传
-- 技能管理：技能添加、证书上传
-- 服务记录：服务时长统计、服务证书
-- 积分管理：积分查询、积分商城
-- 安全设置：紧急联系人、安全保障、保险购买
-- 我的活动、签到记录、我的社群、招募申请、消息中心等模块
+### 3. 活动管理模块
+- 活动创建、编辑、发布、取消
+- 活动分类管理
+- 活动审核流程
+- 活动状态管理
+- 活动封面图片上传
 
-### 4. 智能推荐
-- 活动匹配：基于技能、历史记录的推荐
-- 技能匹配：活动技能要求匹配
-- 个性化推荐：AI智能推荐适配活动
+### 4. 报名管理模块
+- 活动报名申请
+- 报名审核流程
+- 报名状态查询
 
-### 5. 社群功能
-- 社群列表：浏览所有社群
-- 加入社群：申请加入感兴趣的社群
+### 5. 签到管理模块
+- 签到记录管理
+- 二维码签到验证
+- 位置签到验证
+- 签到状态统计
 
-### 6. 招募信息
-- 招募列表：浏览招募信息
-- 申请招募：提交申请
-- 申请状态：查看申请进度、录用通知
+### 6. 社群管理模块
+- 社群创建和管理
+- 社群成员管理
 
-### 7. 积分商城
-- 商品浏览：积分兑换商品
-- 兑换记录：历史兑换记录查询
+### 7. 招募管理模块
+- 招募信息发布
+- 招募申请管理
+- 录用筛选流程
+- 录用通知发送
 
-### 8. 保险服务
-- 保险购买：志愿者保险产品购买
-- 订单管理：保单查询
+### 8. 技能管理模块
+- 技能分类管理
+- 用户技能管理
+- 证书管理
+- 技能匹配推荐
 
-### 9. 星级志愿者
-- 排行榜：服务时长排行
+### 9. 积分与激励模块
+- 积分规则配置
+- 积分记录管理
+- 积分商城商品管理
+- 积分兑换功能
+
+### 10. 保险管理模块
+- 保险产品管理
+- 保险订单管理
+- 保单查询
+
+### 11. 数据统计模块
+- 活动数据统计
+- 用户数据统计
+- 志愿者服务时长统计
+- 综合数据报表
+
+### 12. 系统管理模块
+- 角色管理（RBAC）
+- 菜单管理
+- 权限控制
 
 ## 环境要求
 
-- **Node.js**: ^20.19.0 || >=22.12.0
-- **npm**: 9.0.0 或更高版本
-- **后端服务**: 需要在本地8080端口运行
+- **JDK**: 1.8 或更高版本
+- **Maven**: 3.6.0 或更高版本
+- **MySQL**: 8.0 或更高版本
+- **操作系统**: Windows/Linux/MacOS
 
 ## 安装与启动
 
-### 1. 安装依赖
+### 1. 数据库准备
+
+1. 创建数据库：
+
+```sql
+CREATE DATABASE volunteer_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+2. 执行初始化脚本：
 
 ```bash
-npm install
+
+# 导入表结构和测试数据
+mysql -u root -p volunteer_db < database/02.表结构和测试数据初始化volunteer_db.sql
 ```
 
-### 2. 开发环境运行
+### 2. 配置文件修改
+
+编辑 `src/main/resources/application-dev.yml`：
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/volunteer_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: root  # 修改为你的数据库用户名
+    password: 123456  # 修改为你的数据库密码
+```
+
+### 3. 编译项目
 
 ```bash
-npm run dev
+# 清理并编译项目
+mvn clean compile
+
+# 或者打包项目
+mvn clean package
 ```
 
-访问地址: http://localhost:3000
+### 4. 启动项目
 
-### 3. 生产环境构建
+**方式一：使用Maven启动**
 
 ```bash
-# 类型检查并构建
-npm run build
-
-# 仅构建（不含类型检查）
-npm run build-only
+mvn spring-boot:run
 ```
 
-### 4. 构建产物预览
+**方式二：使用Java命令启动**
 
 ```bash
-npm run preview
+# 先打包
+mvn clean package
+
+# 启动jar包
+java -jar target/volunteer-service-backend-1.0.0.jar
 ```
 
-### 5. 代码检查
+**方式三：使用启动脚本**
 
+Windows:
 ```bash
-npm run lint
+start.bat
 ```
 
-## 开发配置
+### 5. 验证启动
 
-### 代理配置
+访问以下URL验证服务是否启动成功：
+- 健康检查: http://localhost:8080/api/health
+- Swagger文档: http://localhost:8080/api/swagger-ui.html (如果配置了)
 
-项目在 `vite.config.ts` 中配置了开发代理：
+## 配置说明
 
-```typescript
-server: {
-  port: 3000,                    // 前端开发服务端口
-  host: '0.0.0.0',
-  proxy: {
-    '/api': {
-      target: 'http://localhost:8080',  // 后端服务地址
-      changeOrigin: true,
-      secure: false
-    },
-    '/uploads': {
-      target: 'http://localhost:8080',  // 文件上传服务地址
-      changeOrigin: true,
-      secure: false
-    }
-  }
-}
+### 数据库配置
+
+在 `application.yml` 中配置：
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/volunteer_db
+    username: root
+    password: 123456
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
 ```
 
-### 环境变量
+### JWT配置
 
-可在项目根目录创建 `.env` 文件配置环境变量：
-
-```bash
-# 后端API地址
-VITE_API_BASE_URL=http://localhost:8080/api
-
-# 文件服务地址
-VITE_UPLOAD_BASE_URL=http://localhost:8080/api/uploads
+```yaml
+jwt:
+  secret: your-jwt-secret-key
+  expiration: 86400000  # 24小时，单位毫秒
+  header: Authorization
+  prefix: Bearer
 ```
 
-## 主要功能说明
+### 文件上传配置
 
-### 用户权限
+```yaml
+file:
+  upload:
+    path: uploads  # 上传文件存储路径
+    url-prefix: /uploads
+    base-url: http://localhost:8080/api/uploads
+    max-size: 10485760  # 10MB
+```
 
-系统支持两种用户模式：
-- **游客模式**：无需登录，可浏览活动、查看详情
-- **注册用户**：登录后可使用完整功能，包括报名、个人信息管理等
+### 日志配置
 
-### 活动报名流程
+```yaml
+logging:
+  level:
+    com.volunteer: debug
+    org.springframework.security: debug
+  file:
+    name: logs/volunteer-service.log
+```
 
-1. 浏览活动列表
-2. 查看活动详情和要求
-3. 点击"立即报名"
-4. 填写报名信息
-5. 等待组织者审核
-6. 接收审核通知
-7. 审核通过后参与活动
+## API接口说明
 
-### 签到机制
+### 基础路径
 
-- **二维码签到**：活动组织者生成签到码
-- **位置签到**：基于GPS位置的签到验证
-- **双重验证**：确保服务真实性
+所有API接口的基础路径为：`http://localhost:8080/api`
 
-### 服务时长统计
+### 认证接口
 
-- 自动记录活动参与时长
-- 生成服务证书（PDF格式）
-- 支持导出和打印
-- 对接官方志愿平台完成时长认证
+- `POST /auth/login` - 用户登录
+- `POST /auth/register` - 用户注册
+- `POST /auth/logout` - 用户登出
 
-### 证书生成
+### 活动接口
 
-使用jsPDF和html2canvas技术：
-- 活动完成后自动生成电子证书
-- 支持自定义证书样式
-- 证书可下载保存或添加至个人档案
+- `GET /activity/list` - 获取活动列表
+- `GET /activity/{id}` - 获取活动详情
+- `POST /activity/create` - 创建活动
+- `PUT /activity/update` - 更新活动
+- `DELETE /activity/{id}` - 删除活动
 
-### 智能匹配
+### 报名接口
 
-- **技能匹配**：根据用户技能匹配活动需求
-- **历史推荐**：基于用户参与历史推荐相似活动
-- **地理推荐**：优先推荐附近的活动
-- **时间推荐**：根据用户可用时间推荐
+- `POST /registration/register` - 活动报名
+- `GET /registration/my-registrations` - 我的报名
+- `PUT /registration/cancel/{id}` - 取消报名
+
+更多接口详见API文档或Swagger配置。
 
 ## 注意事项
 
-### 1. 开发环境配置
-- 确保后端服务已启动在8080端口
-- 确保MySQL数据库已运行并包含完整数据
-- 首次运行需先执行 `npm install` 安装依赖
+### 1. 数据库配置
 
-### 2. 代码规范
-- 使用TypeScript进行开发，确保类型安全
-- 遵循Vue 3 Composition API规范
-- 使用ESLint进行代码检查
-- 组件命名采用PascalCase
-- 文件命名采用kebab-case
+- 确保MySQL服务已启动
+- 确保数据库已创建并执行了初始化脚本
+- 用户名密码配置正确
+- 时区设置为Asia/Shanghai
 
-### 3. 性能优化
-- 使用Vite的自动代码分割
-- 按需导入Element Plus组件
-- 活动列表使用分页加载
-- 图片使用懒加载优化
-- 长列表使用虚拟滚动
+### 2. 端口占用
 
-### 4. 移动端适配
-- 支持响应式设计
-- 在移动设备上自动适配布局
-- 触摸事件优化
-- 提供移动端专用操作体验
+- 默认端口为8080
+- 如需修改，在 `application.yml` 中配置：
 
-### 5. 文件上传
+```yaml
+server:
+  port: 8081  # 修改为你想要的端口
+```
 
-- 图片上传：头像、活动封面、证书等
-- 支持格式：JPG、PNG、PDF等
-- 文件大小限制：单文件最大10MB
-- 自动压缩和格式转换
+### 3. 文件上传
+
+- 确保 `uploads` 目录存在且有写权限
+- 文件上传限制为10MB
+- 支持的文件类型：图片、PDF等
+
+### 4. JWT密钥
+
+- 生产环境请修改JWT密钥
+- 密钥长度建议至少32个字符
+- 密钥泄露会带来安全风险
+
+### 5. 日志管理
+
+- 日志文件存储在 `logs` 目录
+- 建议定期清理历史日志
+- 生产环境建议配置日志轮转
 
 ### 6. 常见问题
 
-**Q: 无法加载图片或文件？**
-A: 检查后端uploads目录是否存在，检查文件上传服务是否正常
+**Q: 数据库连接失败？**
+A: 检查MySQL服务是否启动，数据库名、用户名、密码是否正确
 
-**Q: 证书下载失败？**
-A: 确保安装了jsPDF和html2canvas依赖，检查浏览器控制台错误
+**Q: 端口8080被占用？**
+A: Powershell中执行 `netstat -ano | findstr :8080` 查找占用进程，或修改端口配置
 
-**Q: 定位功能不工作？**
-A: 检查浏览器定位权限，确保使用HTTPS或localhost环境
+**Q: JWT认证失败？**
+A: 检查请求头是否携带正确的Token，格式为 `Bearer {token}`
 
-**Q: 报名后审核状态不更新？**
-A: 检查websocket连接是否正常，或手动刷新页面
+**Q: 文件上传失败？**
+A: 检查uploads目录权限，确保有写权限
 
-## 浏览器支持
+**Q: MyBatis报错？**
+A: 检查mapper XML文件路径，确保mapper-locations配置正确
 
-推荐使用以下浏览器：
-- Chrome（最新版本）- 推荐
-- Edge（最新版本）
-- Firefox（最新版本）
-- Safari（最新版本）
-- 移动端浏览器（iOS Safari、Chrome Mobile）
+### 7. 性能优化
 
-## 贡献指南
+- 使用HikariCP连接池提升性能
+- 启用Caffeine缓存减少数据库查询
+- 数据库添加适当索引
+- 大列表查询使用分页
 
-1. Fork本项目
-2. 创建功能分支: `git checkout -b feature/YourFeature`
-3. 提交更改: `git commit日本語 -m 'Add some feature'`
-4. 推送到分支: `git push origin feature/YourFeature`
-5. 提交Pull Request
+### 8. 安全建议
 
-## 许可证
+- 生产环境修改JWT密钥
+- 配置HTTPS协议
+- 加强SQL注入防护
+- 添加请求频率限制
+- 配置CORS跨域策略
 
-本项目采用 MIT 许可证
+## 部署说明
 
+### 开发环境部署
+
+使用IDE（如IntelliJ IDEA）：
+1. 导入Maven项目
+2. 配置JDK版本
+3. 配置数据库连接
+4. 运行 `VolunteerServiceApplication`
+
+### 生产环境部署
+
+1. 打包项目：
+
+```bash
+mvn clean package -DskipTests
+```
+
+2. 上传jar包到服务器
+
+3. 创建启动脚本
+
+4. 使用nohup或systemd运行：
+
+```bash
+nohup java -jar volunteer-service-backend-wide-jar-with-dependencies.jar > logs/console.log 2>&1 &
+```
+
+5. 配置Nginx反向代理（可选）
 ## 联系方式
 
 如有问题或建议，请联系开发团队
+

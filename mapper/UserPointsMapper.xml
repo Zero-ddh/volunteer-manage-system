@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.volunteer.mapper.UserPointsMapper">
+
+    <!-- 获取用户总积分 -->
+    <select id="getUserTotalPoints" resultType="java.lang.Integer">
+        SELECT COALESCE(SUM(
+            CASE 
+                WHEN points_type = 1 THEN points 
+                WHEN points_type = 2 THEN -points 
+                ELSE 0 
+            END
+        ), 0) as total_points
+        FROM user_points 
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 获取用户积分记录列表 -->
+    <select id="getUserPointsRecords" resultType="com.volunteer.entity.UserPoints">
+        SELECT id, user_id, points, points_type, source, description, balance, created_time
+        FROM user_points 
+        WHERE user_id = #{userId}
+        ORDER BY created_time DESC
+    </select>
+
+    <!-- 分页查询积分记录（管理后台） -->
+    <select id="getPointsRecordsPage" resultType="com.volunteer.entity.UserPoints">
+        SELECT up.id, up.user_id, up.points, up.points_type, up.source, up.description, up.balance, up.created_time,
+               vu.username, vu.real_name
+        FROM user_points up
+        LEFT JOIN volunteer_user vu ON up.user_id = vu.id
+        <where>
+            <if test="username != null and username != ''">
+                AND vu.username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="realName != null and realName != ''">
+                AND vu.real_name LIKE CONCAT('%', #{realName}, '%')
+            </if>
+            <if test="pointsType != null">
+                AND up.points_type = #{pointsType}
+            </if>
+            <if test="source != null and source != ''">
+                AND up.source LIKE CONCAT('%', #{source}, '%')
+            </if>
+        </where>
+        ORDER BY up.created_time DESC
+    </select>
+
+</mapper>

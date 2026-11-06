@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.volunteer.mapper.RecruitmentAdmissionMapper">
+
+    <!-- 分页查询招募报名者（包含用户信息） -->
+    <select id="selectApplicantsWithUserInfo" resultType="com.volunteer.vo.RecruitmentApplicantVO">
+        SELECT 
+            ra.id,
+            ra.recruitment_id as recruitmentId,
+            ra.user_id as userId,
+            COALESCE(u.real_name, u.username) as userName,
+            u.phone,
+            u.email,
+            ra.status,
+            ra.remark,
+            ra.skills,
+            ra.experience,
+            ra.created_time as createdTime,
+            ra.updated_time as updatedTime,
+            ra.review_time as reviewTime,
+            ra.review_remark as reviewRemark,
+            ra.deleted
+        FROM recruitment_admission ra
+        LEFT JOIN volunteer_user u ON ra.user_id = u.id
+        WHERE ra.recruitment_id = #{recruitmentId}
+        AND ra.deleted = 0
+        <if test="name != null and name != ''">
+            AND (u.real_name LIKE CONCAT('%', #{name}, '%') OR u.username LIKE CONCAT('%', #{name}, '%'))
+        </if>
+        <if test="phone != null and phone != ''">
+            AND u.phone LIKE CONCAT('%', #{phone}, '%')
+        </if>
+        <if test="status != null">
+            AND ra.status = #{status}
+        </if>
+        ORDER BY ra.created_time DESC
+    </select>
+
+</mapper>
+

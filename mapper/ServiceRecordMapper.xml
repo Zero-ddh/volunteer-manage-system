@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.volunteer.mapper.ServiceRecordMapper">
+
+    <!-- 分页查询用户服务记录（带活动信息） -->
+    <select id="selectUserServiceRecordsWithActivity" resultType="com.volunteer.entity.ServiceRecord">
+        SELECT 
+            sr.*,
+            a.title as activity_title,
+            a.location as activity_location,
+            a.start_time as activity_start_time,
+            a.end_time as activity_end_time
+        FROM service_record sr
+        LEFT JOIN activity a ON sr.activity_id = a.id
+        WHERE sr.user_id = #{userId}
+        AND sr.deleted = 0
+        ORDER BY sr.service_date DESC, sr.created_time DESC
+    </select>
+
+    <!-- 获取用户服务足迹数据 -->
+    <select id="selectUserServiceFootprints" resultType="com.volunteer.entity.ServiceRecord">
+        SELECT 
+            sr.id,
+            sr.user_id,
+            sr.activity_id,
+            sr.latitude,
+            sr.longitude,
+            sr.location,
+            sr.service_date,
+            sr.service_hours,
+            a.title as activity_title
+        FROM service_record sr
+        LEFT JOIN activity a ON sr.activity_id = a.id
+        WHERE sr.user_id = #{userId}
+        AND sr.deleted = 0
+        AND sr.latitude IS NOT NULL
+        AND sr.longitude IS NOT NULL
+        ORDER BY sr.service_date DESC
+    </select>
+
+    <!-- 统计用户服务时长 -->
+    <select id="selectTotalServiceHours" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(service_hours), 0)
+        FROM service_record
+        WHERE user_id = #{userId}
+        AND deleted = 0
+        AND status = 1
+    </select>
+
+    <!-- 统计用户参与的不同活动数量 -->
+    <select id="selectDistinctActivityCount" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT activity_id)
+        FROM service_record
+        WHERE user_id = #{userId}
+        AND deleted = 0
+        AND status = 1
+    </select>
+
+    <!-- 获取用户服务地点统计 -->
+    <select id="selectServiceLocationStats" resultType="com.volunteer.entity.ServiceRecord">
+        SELECT 
+            location,
+            latitude,
+            longitude,
+            COUNT(*) as service_count
+        FROM service_record
+        WHERE user_id = #{userId}
+        AND deleted = 0
+        AND status = 1
+        AND location IS NOT NULL
+        GROUP BY location, latitude, longitude
+        ORDER BY service_count DESC
+    </select>
+
+    <!-- 统计用户服务次数 -->
+    <select id="selectServiceCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM service_record
+        WHERE user_id = #{userId}
+        AND deleted = 0
+        AND status = 1
+    </select>
+
+</mapper>

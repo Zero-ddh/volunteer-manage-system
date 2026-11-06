@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.volunteer.mapper.RecruitmentInfoMapper">
+
+    <!-- 分页查询招募列表（包含报名者数量） -->
+    <select id="selectRecruitmentPageWithApplicantCount" resultType="com.volunteer.entity.RecruitmentInfo">
+        SELECT 
+            ri.*,
+            COALESCE(applicant_count.count, 0) as applicantCount
+        FROM recruitment_info ri
+        LEFT JOIN (
+            SELECT 
+                recruitment_id,
+                COUNT(*) as count
+            FROM recruitment_admission 
+            WHERE deleted = 0
+            GROUP BY recruitment_id
+        ) applicant_count ON ri.id = applicant_count.recruitment_id
+        WHERE ri.deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND ri.title LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="status != null">
+            AND ri.status = #{status}
+        </if>
+        ORDER BY ri.updated_time DESC
+    </select>
+
+</mapper>
+
